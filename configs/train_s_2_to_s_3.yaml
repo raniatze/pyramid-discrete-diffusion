@@ -16,16 +16,18 @@ mask_prob: [0.25, 0.25, 0.25, 0.25]  # [0] for up, [1] for left, [2] for up and 
 infinity_size: [3, 2]
 
 # Data settings
-dataset: 'carla'  # choices: carla, kitti
-train_data_path: './data/CarlaSC_quantized_256_256_16/Cartesian/Train'
-quantized_train_data_path: './data/CarlaSC_quantized_64_64_8/Cartesian/Train'
+dataset: 'pritti'  # choices: carla, pritti, kitti
+train_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_256'
+quantized_train_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_64'
 infer_data_path: ''
 quantized_infer_data_path: ''
 data_argumentation: true
 
 # Hardware and distribution settings
-gpu: 0
-distribution: false
+# gpu: 0
+# distribution: false
+gpu: null
+distribution: true
 num_node: 1
 node_rank: 0
 dist_url: 'tcp://localhost:29500'

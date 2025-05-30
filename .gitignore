@@ -77,6 +77,10 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Rania
+*.xml
+*.iml
+
 # Translations
 *.mo
 *.pot

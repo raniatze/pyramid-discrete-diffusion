@@ -75,27 +75,27 @@ class Experiment(object):
         if self.args.distribution :
             self.train_sampler.set_epoch(epoch)
 
-        for prev_stage_data, next_stage_data, _ in self.loader:
+        for prev_stage_data, next_stage_data, _ in self.loader:  # lists of len equal to bs where each element is of shape (num_sub_scenes, x, y, z)
             self.optimizer.zero_grad()
 
-            if self.args.prev_stage!='none' and self.args.model_type=='con':
+            if self.args.prev_stage!='none' and self.args.model_type=='con':  # s_2 and s_3 con. training
                 total_loss = 0.0
                 num_sub_scenes = len(prev_stage_data[0])
                 for block_idx in range(num_sub_scenes):
-                    selected_prev_data = [scene[block_idx] for scene in prev_stage_data]
+                    selected_prev_data = [scene[block_idx] for scene in prev_stage_data]  # list of len bs where each element is of shape (x, y, z)
                     selected_next_data = [scene[block_idx] for scene in next_stage_data]
 
                     if self.args.next_stage=='s_3':
                         selected_masked = [scene[num_sub_scenes + block_idx - 1] for scene in next_stage_data]
                         selected_masked = torch.from_numpy(np.asarray(selected_masked)).long().cuda()
-                        selected_masked = selected_masked.unsqueeze(1)
-                    prev_data_voxels = torch.from_numpy(np.asarray(selected_prev_data)).long().cuda()
-                    next_data_voxels = torch.from_numpy(np.asarray(selected_next_data)).long().cuda()
-                    one_hot_labels = F.one_hot(prev_data_voxels, num_classes=self.args.num_classes).permute(0, 4, 1, 2, 3).float()
-                    interpolate_labels = F.interpolate(one_hot_labels, size=self.args.next_data_size, mode='trilinear')
-                    prev_data_voxels = interpolate_labels.argmax(dim=1).byte().unsqueeze(1)
+                        selected_masked = selected_masked.unsqueeze(1)  # (bs, 1, 128, 128, 16)
+                    prev_data_voxels = torch.from_numpy(np.asarray(selected_prev_data)).long().cuda()  # (bs, prev_shape[0], prev_shape[1], prev_shape[2])
+                    next_data_voxels = torch.from_numpy(np.asarray(selected_next_data)).long().cuda()  # (bs, next_shape[0], next_shape[1], next_shape[2])
+                    one_hot_labels = F.one_hot(prev_data_voxels, num_classes=self.args.num_classes).permute(0, 4, 1, 2, 3).float()  # (bs, num_classes, prev_shape[0], prev_shape[1], prev_shape[2])
+                    interpolate_labels = F.interpolate(one_hot_labels, size=self.args.next_data_size, mode='trilinear')  # (bs, num_classes, next_shape[0], next_shape[1], next_shape[2])
+                    prev_data_voxels = interpolate_labels.argmax(dim=1).byte().unsqueeze(1)  # (bs, 1, next_shape[0], next_shape[1], next_shape[2])
                     if self.args.next_stage=='s_3':
-                        context = torch.cat([prev_data_voxels, selected_masked], dim=1)
+                        context = torch.cat([prev_data_voxels, selected_masked], dim=1)  # (bs, 2, 128, 128, 16)
                     else:
                         context = prev_data_voxels
                     loss = self.model(next_data_voxels, context)
@@ -104,9 +104,9 @@ class Experiment(object):
                 average_loss = total_loss / num_sub_scenes
                 loss_to_add = average_loss
             elif self.args.prev_stage=='none' and self.args.next_stage=='s_1' and self.args.model_type=='con':
-                next_data_voxels = torch.from_numpy(np.asarray(next_stage_data)).long()
-                context = mask_scene(input=next_data_voxels, mask_ratio=self.args.mask_ratio, mask_prob=self.args.mask_prob)
-                context = torch.from_numpy(np.asarray(context)).long().unsqueeze(1).cuda()
+                next_data_voxels = torch.from_numpy(np.asarray(next_stage_data)).long()  # (bs, 32, 32, 4)
+                context = mask_scene(input=next_data_voxels, mask_ratio=self.args.mask_ratio, mask_prob=self.args.mask_prob)  # list with len equal to bs
+                context = torch.from_numpy(np.asarray(context)).long().unsqueeze(1).cuda()  # (bs, 1, 32, 32, 4)
                 loss = self.model(next_data_voxels.cuda(), context)
                 loss.backward()
                 loss_to_add = loss.detach().cpu().item()
