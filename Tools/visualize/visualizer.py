@@ -9,11 +9,31 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--frame', default='0')
-parser.add_argument('--folder', default='')
-parser.add_argument('--dataset', default = "carla")
+parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2/Generated')
+parser.add_argument('--dataset', default = "pritti")
 parser.add_argument('--voxel_grid', default = False)
 parser.add_argument('--config_file', default = 'carla.yaml')
 parser.add_argument('--label_map', default = False)
+
+pritti_colors = {
+    0: [0, 0, 0],
+    1: [81, 0, 81],  # ground
+    2: [152, 251, 152],  # terrain
+    3: [244, 35, 232],  # sidewalk
+    4: [250, 170, 160],  # parking
+    5: [128, 64, 128],  # road
+    6: [107, 142, 35],  # vc
+    7: [107, 142, 35],  # ve
+    8: [0, 60, 100],  # vb
+    9: [0, 0, 142],  # vs
+    10: [119, 11, 32],  # tw
+    11: [220, 20, 60],  # h
+    12: [70, 70, 70],  # cb
+    13: [102, 102, 156],  # cs
+    14: [153, 153, 153],  # p
+    15: [250, 170, 30],  # tc
+    16: [0, 128, 192],  # o
+}
 
 class SpheresApp:
     MENU_SCENE = 1
@@ -80,7 +100,8 @@ class SpheresApp:
         self.update_scene()
 
     def get_file_list(self):
-        folder_path = './' + self.opt.folder
+        # folder_path = './' + self.opt.folder
+        folder_path = self.opt.folder
         file_list = [os.path.join(folder_path, filename) for filename in sorted(os.listdir(folder_path))]
         return file_list
     
@@ -191,6 +212,8 @@ class SpheresApp:
         elif opt.dataset == 'kitti':
             config = yaml.safe_load(open(opt.config_file, 'r'))
             color_map = config["color_map"]
+        elif opt.dataset == 'pritti':
+            color_map = pritti_colors
         color = np.asarray([color_map[c] for c in colors])
 
         return points, color

@@ -49,10 +49,10 @@ def visualization(args, generated, prev_data_voxels, next_data_voxels, iteration
         masked_context_index = []
 
         for i in range(1, args.num_classes):
-            index = torch.nonzero(generated_i == i ,as_tuple=False)
-            out_color = torch.nonzero(next_data_i == i, as_tuple=False)
-            generated_index.append(F.pad(index,(1,0),'constant',value = i))
-            next_data_index.append(F.pad(out_color,(1,0),'constant',value=i))
+            index = torch.nonzero(generated_i == i ,as_tuple=False)  # (N, 3)
+            out_color = torch.nonzero(next_data_i == i, as_tuple=False)  # (N', 3)
+            generated_index.append(F.pad(index,(1,0),'constant',value = i))  # (N, 4)
+            next_data_index.append(F.pad(out_color,(1,0),'constant',value=i))  # (N', 4)
             if args.prev_stage != 'none':
                 sub_index = torch.nonzero(prev_data_i == i, as_tuple=False)
                 prev_data_index.append(F.pad(sub_index,(1,0),'constant',value = i))
@@ -77,9 +77,9 @@ def visualization(args, generated, prev_data_voxels, next_data_voxels, iteration
             if second_context is not None:
                 np.savetxt(args.log_path+'/MaskedSceneContext/masked_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), masked_context_indexes)
         else:
-            np.savetxt(args.log_path+'/Generated/result_{}.txt'.format((iteration * args.batch_size) + batch), generated_indexes)
+            np.savetxt(args.log_path+'/Generated/result_{}.txt'.format((iteration * args.batch_size) + batch), generated_indexes)  # generated_indexes: (total_num_fg_voxels, 4)
             if args.infer_data_source == 'dataset':
-                np.savetxt(args.log_path+'/GroundTruth/gt_{}.txt'.format((iteration * args.batch_size) + batch), next_data_indexes)
+                np.savetxt(args.log_path+'/GroundTruth/gt_{}.txt'.format((iteration * args.batch_size) + batch), next_data_indexes)  # next_data_indexes: (total_num_fg_voxels', 4)
         
 
 def save_args(args, log_path):

@@ -215,8 +215,8 @@ class Experiment(object):
                                                stage='sub_scene', 
                                                fusion_method=self.args.scene_fusion_method)
                     else:
-                        prev_data_voxels = torch.from_numpy(np.asarray(prev_stage_data)).long().squeeze(1).cuda() # (4,1,256,256,32)
-                        next_data_voxels = torch.from_numpy(np.asarray(next_stage_data)).long().cuda()            
+                        prev_data_voxels = torch.from_numpy(np.asarray(prev_stage_data)).long().squeeze(1).cuda() # (1, 32, 32, 4)
+                        next_data_voxels = torch.from_numpy(np.asarray(next_stage_data)).long().cuda()  # (1, 32, 32, 4)
 
                         if self.args.model_type == 'l_vae':
                             generated = self.model.sample(next_data_voxels) 
@@ -240,8 +240,8 @@ class Experiment(object):
                                 return 0
                             elif self.args.model_type=='con':
                                 context = np.zeros(self.args.next_data_size, dtype=int)
-                                context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(1)
-                                generated = self.model.sample(context)
+                                context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(1)  # (1, 1, 32, 32, 4)
+                                generated = self.model.sample(context)  # (1, 32, 32, 4)
                                 visualization(args=self.args, 
                                               generated=generated, 
                                               prev_data_voxels=prev_data_voxels, 

@@ -1,9 +1,9 @@
 # Experiment settings
 prev_stage: 'none'  # choices: none, s_1, s_2
 next_stage: 's_1'  # choices: s_1, s_2, s_3
-resume: false
-resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_1/models/epoch999.tar' ### TODO: Remember to set your pre-trained model path.
-generation_num: 10 #TODO: You can change this number to generate more or less.
+resume: true
+resume_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/checkpoints/s_1/models/epoch999.tar'
+generation_num: 10
 mode: 'inference' # choices: train, inference, infinity_gen
 infer_data_source: 'dataset' # choices: dataset, generation
 
@@ -19,7 +19,7 @@ infinity_size: [3, 2]
 dataset: 'pritti'  # choices: carla, pritti, kitti
 train_data_path: ''
 quantized_train_data_path: ''
-infer_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_32'
+infer_data_path: '/home/raniatze/Documents/skitti_workspace/cache/pdd_cache/voxel_cache_32'
 quantized_infer_data_path: ''
 data_argumentation: false
 

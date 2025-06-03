@@ -267,11 +267,11 @@ class Con_Diffusion(torch.nn.Module):
         if self.args.prev_stage != 'none':
             self.shape = self.args.next_data_size
         else:
-            self.shape = voxel_input.size()[2:]
+            self.shape = voxel_input.size()[2:]  # (32, 32, 4)
         
-        uniform_logits = torch.zeros((self.args.batch_size, self.num_classes) + self.shape, device=device)
+        uniform_logits = torch.zeros((self.args.batch_size, self.num_classes) + self.shape, device=device)  # (bs, num_classes, x, y, z)
 
-        log_z = self.log_sample_categorical(uniform_logits)
+        log_z = self.log_sample_categorical(uniform_logits)  # one-hot: (bs, num_classes, x, y, z)
 
         diffusion = []
 
@@ -279,14 +279,14 @@ class Con_Diffusion(torch.nn.Module):
         for i in reversed(range(0, num_steps)):
 
             t = torch.full((self.args.batch_size,), i, device=device, dtype=torch.long)
-            log_model_prob, log_x0_recon = self.p_pred(log_x=log_z, t=t, cond=voxel_input)
+            log_model_prob, log_x0_recon = self.p_pred(log_x=log_z, t=t, cond=voxel_input)  # (bs, num_classes, x, y, z), (bs, num_classes, x, y, z)
 
-            log_z = self.log_sample_categorical(log_model_prob)
+            log_z = self.log_sample_categorical(log_model_prob)  # (bs, num_classes, x, y, z)
 
             if i%10 ==0:
                 diffusion.append(log_onehot_to_index(log_z))
 
-        result = log_onehot_to_index(log_z)
+        result = log_onehot_to_index(log_z)  # (bs, x, y, z)
         if intermediate : 
             return result, diffusion
         else : 
