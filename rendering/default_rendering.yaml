@@ -1,0 +1,45 @@
+hydra:
+  run:
+    dir: ${output_dir}
+  output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
+
+worker:
+  _target_: multithreading.worker_ray.RayDistributed
+  _convert_: 'all'
+  master_node_ip: null    # Set to a master node IP if you desire to connect to cluster remotely
+  threads_per_node: 1  # Number of CPU threads to use per node, "null" means all threads available
+  debug_mode: false       # If true all tasks will be executed serially, mainly for testing
+  log_to_driver: true     # If true, all printouts from ray threads will be displayed in driver
+  logs_subdir: 'logs'     # Subdirectory to store logs inside the experiment directory
+  use_distributed: false  # Whether to use the built-in distributed mode of ray
+
+# Common experiment configs
+group: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion'              # This is where results, logs, config, etc. are saved
+experiment_name: 'bev_rendering'                                # Experiment name, by default 'simulation' or 'training'
+job_name: 'bev_rendering'                                      # Job name, as defined in the specific yaml files.
+
+# Directory structure
+date_format: '%Y.%m.%d.%H.%M.%S'
+experiment_uid: ${now:${date_format}}              # Unique Id of the experiment, default to timestamp
+experiment: ${experiment_name}/${job_name}/${experiment_uid}      # Unique name of the experiment
+output_dir: ${group}/${experiment}                  # Output directory to save all training artifacts
+log_config: false                                   # Whether to log the final config after all overrides and interpolations TODO: use or remove
+
+# Execution
+max_number_of_workers: null                         # Set null to disable threading for simulation execution
+seed: 0                                             # Random seed value.
+enable_profiling: false                             # Whether to enable profiler which will be dumped to "profiling" folder
+gpu: true                                           # Whether to use available GPUs during training/simulation
+
+# Logger
+logger_level: info                                  # Level of logger
+logger_format_string: null                          # Logger format string, set null to use the default format string
+
+target_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2/Voxels/Generated'
+save_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2/Voxels/Generated/Rendering'
+generated_samples_cache_size: 10
+pixel_width: 256
+pixel_height: 256
+grid_shape: [64, 64, 8]
+voxel_size: 1.0
+voxel_z_offset: 0.5

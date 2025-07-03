@@ -9,7 +9,8 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--frame', default='0')
-parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2/Generated')
+parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/test/GeneratedFusion')
+# parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/conditional_generation_pritti/GroundTruth')
 parser.add_argument('--dataset', default = "pritti")
 parser.add_argument('--voxel_grid', default = False)
 parser.add_argument('--config_file', default = 'carla.yaml')
@@ -266,6 +267,31 @@ def main(opt):
     SpheresApp(opt)
     gui.Application.instance.run()
 
+# if __name__ == "__main__":
+    # opt = parser.parse_args()
+    # main(opt)
+
 if __name__ == "__main__":
     opt = parser.parse_args()
-    main(opt)
+
+    app = SpheresApp(opt)
+    file_path = app.file_list[0]
+    points, colors = app.get_voxel(file_path)
+
+    # Convert to PointCloud
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    pcd.colors = o3d.utility.Vector3dVector(colors / 255)
+
+    # Convert to VoxelGrid
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=1.0)
+
+    # Create voxel lines (optional wireframe)
+    line_set = app.create_voxel_grid_lines(voxel_grid) if opt.voxel_grid else None
+
+    # Show voxel grid + lines using draw_geometries
+    geometries = [voxel_grid]
+    if line_set:
+        geometries.append(line_set)
+
+    o3d.visualization.draw_geometries(geometries, window_name="VoxelGrid Preview")

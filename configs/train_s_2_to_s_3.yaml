@@ -37,7 +37,7 @@ batch_size: 4
 num_workers: 8
 pin_memory: false
 epochs: 1000
-check_every: 100
+check_every: 10
 
 # Loss and optimization settings
 clip_value: null

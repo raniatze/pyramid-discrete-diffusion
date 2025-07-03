@@ -114,7 +114,7 @@ class DataManager:
             infer_ds = PrittiDataset(
                 directory=self.args.infer_data_path,
                 quantized_directory=self.args.quantized_infer_data_path,
-                split="train",
+                split="val",
                 data_argumentation=False,
                 mode=self.args.mode,
                 prev_stage=self.args.prev_stage,

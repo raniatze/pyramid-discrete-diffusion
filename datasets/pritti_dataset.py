@@ -7,6 +7,11 @@ from torch.utils.data import Dataset
 from utils.spilt_scenes import split_scenes
 from utils.mask_scene import mask_scene
 
+def extract_frame_number(path_str):
+    filename = os.path.basename(path_str)
+    frame_id = ''.join(filter(str.isdigit, filename))
+    return int(frame_id) if frame_id else -1
+
 
 class PrittiDataset(Dataset):
     def __init__(
@@ -161,6 +166,15 @@ class PrittiDataset(Dataset):
             prev_stage_data = next_stage_data.copy()
             quantized_output = np.zeros_like(next_stage_data)
             counts = np.zeros_like(next_stage_data)
+        elif (
+            self.mode in ["inference", "infinity_gen"]
+            and self.prev_stage != "none"
+            and self.infer_data_source == "generation"
+        ):
+            _output = self.load_generated_output(idx_range[-1])
+            next_stage_data = np.zeros(self.next_data_size)
+            counts = next_stage_data.copy()
+            prev_stage_data = next_stage_data.copy()
         else:
             quantized_output = self.load_computed_feature_from_folder(
                 self._quantized_eval_labels[idx_range[-1]]
@@ -175,13 +189,6 @@ class PrittiDataset(Dataset):
             next_stage_data, counts, quantized_output = self.apply_data_augmentation(
                 next_stage_data, counts, quantized_output
             )
-
-        if (
-            self.mode in ["inference", "infinity_gen"]
-            and self.prev_stage != "none"
-            and self.infer_data_source == "generation"
-        ):
-            _output = self.load_generated_output(idx_range[-1])
 
         if self.next_stage in ["s_2", "s_3"] and self.prev_stage != "none":
             if self.infer_data_source == "dataset":
@@ -250,14 +257,17 @@ class PrittiDataset(Dataset):
 
     # no enough frame
     def find_horizon(self, idx):
+        if self.mode in ["inference", "infinity_gen"] and self.prev_stage != "none" and self.infer_data_source == "generation":
+            frames_list = self._completion_list
+        else:
+            frames_list = self._frames_list
+
         end_idx = idx
         idx_range = np.arange(idx - self._num_frames, idx) + 1
-        diffs = np.asarray(
-            [
-                int(self._frames_list[end_idx]) - int(self._frames_list[i])
-                for i in idx_range
-            ]
-        )
+        diffs = np.asarray([
+            extract_frame_number(frames_list[end_idx]) - extract_frame_number(frames_list[i])
+            for i in idx_range
+        ])
         good_difs = -1 * (np.arange(-self._num_frames, 0) + 1)
 
         idx_range[good_difs != diffs] = -1

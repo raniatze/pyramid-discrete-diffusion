@@ -2,13 +2,16 @@
 prev_stage: 's_1'  # choices: none, s_1, s_2
 next_stage: 's_2'  # choices: s_1, s_2, s_3
 resume: true
-resume_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/checkpoints/s_1_to_s_2/models/epoch999.tar'
-generation_num: 10
+resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_1_to_s_2/models/epoch999.tar'
+# resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_1_to_s_2/models/epoch999.tar'
+generation_num: 50000
 mode: 'inference' # choices: train, inference, infinity_gen
 infer_data_source: 'generation' # choices: dataset, generation ### TODO: Change to 'generation' if you want to use the generated data from s_1
+# infer_data_source: 'dataset'
 
 # Scene settings
-prev_scene_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
+prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_1_50K/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
+# prev_scene_path: ''
 scene_fusion_method: 'discard'  # choices: discard, force, vote
 mask_ratio: 0.0625
 infinite_ratio: 0.1875
@@ -19,8 +22,8 @@ infinity_size: [3, 2]
 dataset: 'pritti'  # choices: carla, pritti, kitti
 train_data_path: ''
 quantized_train_data_path: ''
-infer_data_path: '/home/raniatze/Documents/skitti_workspace/cache/pdd_cache/voxel_cache_64'
-quantized_infer_data_path: '/home/raniatze/Documents/skitti_workspace/cache/pdd_cache/voxel_cache_32'
+infer_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_64'
+quantized_infer_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_32'
 data_argumentation: false
 
 # Hardware and distribution settings

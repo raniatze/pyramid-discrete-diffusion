@@ -54,7 +54,10 @@ class Experiment(object):
 
         if self.args.mode in ['inference', 'infinity_gen']:
             print("Scenes will be generated.")
-            self.sample()
+            if self.args.prev_stage=='none' and self.args.mode=="inference" and self.args.model_type=='con':
+                self.sample_s1()
+            else:
+                self.sample()
             print("Generation process finished.")
         elif self.args.mode == 'train':
             for epoch in range(self.current_epoch, epochs): 
@@ -135,6 +138,25 @@ class Experiment(object):
         if self.scheduler_epoch: self.scheduler_epoch.step()
         return {'loss': loss_sum/loss_count}
 
+    def sample_s1(self):
+        self.model.eval()
+        with torch.no_grad():
+            gen_num_recorder = 0
+            while gen_num_recorder < self.args.generation_num:
+                print(f"Working on generation process: {gen_num_recorder + 1} / {self.args.generation_num}")
+                context = np.zeros((32, 32, 4), dtype=int)
+                context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(
+                    1)  # (1, 1, 32, 32, 4)
+                generated = self.model.sample(context)  # (1, 32, 32, 4)
+                visualization(args=self.args,
+                              generated=generated,
+                              prev_data_voxels=[None] * len(generated),
+                              next_data_voxels=[None] * len(generated),
+                              iteration=gen_num_recorder)
+                gen_num_recorder += 1
+        return
+
+
 
     def sample(self):
         self.model.eval()
@@ -153,8 +175,8 @@ class Experiment(object):
                             infinite_scenes = self.args.infinity_size[0] * self.args.infinity_size[1]
                             print(f"Working on INFINITE SCENE generation process: {gen_num_recorder} / {infinite_scenes}")
                         for block_idx in range(num_sub_scenes):
-                            selected_prev_data = [scene[block_idx] for scene in prev_stage_data]
-                            selected_next_data = [scene[block_idx] for scene in next_stage_data]
+                            selected_prev_data = [scene[block_idx] for scene in prev_stage_data]  # list with len equal to bs
+                            selected_next_data = [scene[block_idx] for scene in next_stage_data]  # list with len equal to bs
 
                             if self.args.next_stage=='s_3':
                                 if self.args.mask_ratio in [0.0625, 0.125, 0.25]:
@@ -165,8 +187,8 @@ class Experiment(object):
                                 second_context = torch.from_numpy(np.asarray(selected_masked)).long().cuda()
                                 _second_context = second_context.unsqueeze(1)
 
-                            prev_data_voxels = torch.from_numpy(np.asarray(selected_prev_data)).long().cuda()
-                            next_data_voxels = torch.from_numpy(np.asarray(selected_next_data)).long().cuda()
+                            prev_data_voxels = torch.from_numpy(np.asarray(selected_prev_data)).long().cuda()  # (bs, h, w, c)
+                            next_data_voxels = torch.from_numpy(np.asarray(selected_next_data)).long().cuda()  # (bs, h', w', c')
 
                             _prev_data_voxels = prev_data_voxels.clone().detach().long()
                             one_hot_labels = F.one_hot(_prev_data_voxels, num_classes=self.args.num_classes).permute(0, 4, 1, 2, 3).float()
@@ -241,6 +263,7 @@ class Experiment(object):
                             elif self.args.model_type=='con':
                                 context = np.zeros(self.args.next_data_size, dtype=int)
                                 context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(1)  # (1, 1, 32, 32, 4)
+                                print("zero context")
                                 generated = self.model.sample(context)  # (1, 32, 32, 4)
                                 visualization(args=self.args, 
                                               generated=generated, 
