@@ -2,6 +2,7 @@
 checkpoints/
 generated/
 infinite_generation/
+data/
 
 #pre-trained
 pre-trained/
