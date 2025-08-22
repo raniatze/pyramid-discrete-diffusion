@@ -3,7 +3,7 @@ prev_stage: 'none'  # choices: none, s_1, s_2
 next_stage: 's_1'  # choices: s_1, s_2, s_3
 resume: true
 resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_1/models/epoch999.tar'
-generation_num: 50000
+generation_num: 20
 mode: 'inference' # choices: train, inference, infinity_gen
 infer_data_source: 'dataset' # choices: dataset, generation # NOTE: Must be set to dataset for inference?
 

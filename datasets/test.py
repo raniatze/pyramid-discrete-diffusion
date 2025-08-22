@@ -1,6 +1,9 @@
+import os.path
 from pathlib import Path
 import gzip
 import pickle
+
+import matplotlib.pyplot as plt
 import open3d as o3d
 import numpy as np
 from tqdm import tqdm
@@ -119,7 +122,7 @@ def load_computed_feature_from_folder(feature_file: Path) -> np.ndarray:
         raise RuntimeError(f"Corrupted or unreadable file: {feature_file}") from e
 
 # Start directory
-data_dir = Path("/home/raniatze/Documents/skitti_workspace/cache/pdd_cache/voxel_cache_256")
+data_dir = Path("/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K")
 
 # Iterate over all .gz files
 all_files = list(data_dir.rglob("*.gz"))
@@ -127,17 +130,20 @@ all_files = list(data_dir.rglob("*.gz"))
 print(f"Found {len(all_files)} files.")
 
 for gz_file in tqdm(all_files):
-    sequence = gz_file.parts[-4]
-    split = gz_file.parts[-3]
-    frame = gz_file.parts[-2]
-    result = f"{sequence}/{split}/{frame}"
+    # sequence = gz_file.parts[-4]
+    # split = gz_file.parts[-3]
+    # frame = gz_file.parts[-2]
+    # result = f"{sequence}/{split}/{frame}"
     # print(result)
     try:
         # Try to load file
         with gzip.open(gz_file, "rb") as f:
             data = pickle.load(f)
-            voxel_grid = data["data"]
-            # print(voxel_grid.shape)
+            semantic_map = data["data"]
+            if np.all(semantic_map == 0) or np.all(semantic_map == 255):
+                raise Exception("Wrong semantic map")
+            # plt.imshow(semantic_map)
+            # plt.show()
     except Exception as e:
         print(f"[ERROR] File corrupted or failed to load: {gz_file}")
         print(f"        Reason: {e}")

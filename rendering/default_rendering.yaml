@@ -35,9 +35,9 @@ gpu: true                                           # Whether to use available G
 logger_level: info                                  # Level of logger
 logger_format_string: null                          # Logger format string, set null to use the default format string
 
-target_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2/Voxels/Generated'
-save_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2/Voxels/Generated/Rendering'
-generated_samples_cache_size: 10
+target_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K/Generated'
+save_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K/Rendering'
+generated_samples_cache_size: 50000
 pixel_width: 256
 pixel_height: 256
 grid_shape: [64, 64, 8]

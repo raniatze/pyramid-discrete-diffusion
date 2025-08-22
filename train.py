@@ -164,6 +164,7 @@ class Experiment(object):
             dataloader = self.loader
             gen_num_recorder = 0
             for iterate, (prev_stage_data, next_stage_data, _) in enumerate(dataloader):
+                assert len(prev_stage_data) == len(next_stage_data) == 1
                 if len(prev_stage_data) == self.args.batch_size :
                     gen_num_recorder += 1
                     if self.args.mode != 'infinity_gen':

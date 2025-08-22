@@ -172,7 +172,12 @@ class PrittiDataset(Dataset):
             and self.infer_data_source == "generation"
         ):
             _output = self.load_generated_output(idx_range[-1])
-            next_stage_data = np.zeros(self.next_data_size)
+            if self.next_stage == "s_3":
+                next_stage_data = np.zeros((256, 256, 16))
+            elif self.next_stage == "s_2":
+                next_stage_data = np.zeros((64, 64, 8))
+            else:
+                raise ValueError(f"Incorrect next_stage: {self.next_stage}")
             counts = next_stage_data.copy()
             prev_stage_data = next_stage_data.copy()
         else:

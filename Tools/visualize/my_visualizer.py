@@ -8,10 +8,10 @@ from typing import Optional
 from features.image_feature import Image
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K/PrevSceneContext')
+parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_2_to_s_3_20/GeneratedFusion')
 parser.add_argument('--voxel_grid', action='store_false')
-parser.add_argument('--voxel_size', type=float, default=2.0)  # ADJUST
-parser.add_argument('--voxel_dims', type=int, nargs=3, default=[32, 32, 4], help='Dimensions of the voxel grid as [X Y Z]')  # ADJUST
+parser.add_argument('--voxel_size', type=float, default=0.25)  # ADJUST
+parser.add_argument('--voxel_dims', type=int, nargs=3, default=[256, 256, 16], help='Dimensions of the voxel grid as [X Y Z]')  # ADJUST
 
 opt = parser.parse_args()
 
@@ -96,9 +96,9 @@ def bev_voxel_grid_rendering(
     renderer.scene.clear_geometry()
     return Image(data=rendered_image)
 
-def make_voxel_grid_from_points(points, colors, voxel_dims, voxel_size=0.25):
+def make_voxel_grid_from_points(points, colors, remap=False):
     voxel_grid = o3d.geometry.VoxelGrid()
-    voxel_grid.voxel_size = voxel_size
+    voxel_grid.voxel_size = opt.voxel_size
     voxel_grid.origin = [0.0, 0.0, 0.0]
 
     for i in range(points.shape[0]):
@@ -106,13 +106,32 @@ def make_voxel_grid_from_points(points, colors, voxel_dims, voxel_size=0.25):
         r, g, b = colors[i]
         color = np.array([r, g, b]) / 255.0
 
-        # new_x = y  # forward
-        # new_y = (voxel_dims[0] / 2) - x  # right (centered)
-        # new_z = z - (voxel_dims[2] - 1)  # down
-        grid_index = (
-            int(round(x)),
-            int(round(y)),
-            int(round(z))
+        # Step 1: Re-orient axes (X = forward, Y = right, Z = up)
+        if remap:
+            rotated_x = y
+            rotated_y = x
+            rotated_z = z
+
+            # Step 2: Set ego vehicle at (max_x, center_y)
+            max_x = opt.voxel_dims[1]  # was Y direction
+            center_y = opt.voxel_dims[0] / 2  # was X direction
+
+            # Step 3: Shift world so that this point becomes the origin
+            world_x = -(rotated_x - max_x) * opt.voxel_size  # move back to 0
+            world_y = (rotated_y - center_y) * opt.voxel_size  # move to center
+            world_z = rotated_z * opt.voxel_size  # Z stays the same
+
+            # Step 4: Create voxel at new position
+            grid_index = (
+                int(round(world_x / opt.voxel_size)),
+                int(round(world_y / opt.voxel_size)),
+                int(round(world_z / opt.voxel_size)),
+            )
+        else:
+            grid_index = (
+                int(round(x)),
+                int(round(y)),
+                int(round(z))
         )
 
         voxel = o3d.geometry.Voxel(grid_index=grid_index, color=color)
@@ -209,8 +228,6 @@ renderer.scene.set_background([1.0, 1.0, 1.0, 1.0])
 renderer.scene.view.set_post_processing(False)
 
 for i, filename in enumerate(file_list):
-    # if i != 3:  # TODO: Fix so that it works in a loop
-        # continue
     file_path = os.path.join(opt.folder, filename)
     print(f"Visualizing: {file_path}")
 
@@ -228,11 +245,17 @@ for i, filename in enumerate(file_list):
     colors = np.array([pritti_colors[int(l)] for l in labels])
 
     # For BEV semantic map rendering only
-    # voxel_grid = make_voxel_grid_from_points(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size)
+    # voxel_grid = make_voxel_grid_from_points(points, colors, remap=False)
+    # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
+    # o3d.visualization.draw_geometries([voxel_grid, normal_frame], window_name=f"Scene {i} before remapping")
+
+    # voxel_grid = make_voxel_grid_from_points(points, colors, remap=True)
+    # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
+    # o3d.visualization.draw_geometries([voxel_grid, normal_frame], window_name=f"Scene {i} after remapping")
     # bev_voxel_grid_rendering(renderer, voxel_grid, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size)
 
 
     # For visualizing voxel grids
     voxel_grid, line_set = voxel_grid_to_cubes_with_wireframes(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size)
     normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
-    o3d.visualization.draw_geometries([voxel_grid, line_set, normal_frame], window_name=f"Scene {i}")
+    o3d.visualization.draw_geometries([voxel_grid, line_set, normal_frame], window_name=f"Scene {os.path.basename(file_path)}")
