@@ -15,6 +15,9 @@ CarlaSC_quantized_64_64_8/
 CarlaSC_quantized_256_256_16/
 Cartesian/
 
+# rendering
+bev_rendering/
+
 test/
 
 fids/
@@ -80,6 +83,7 @@ cover/
 # Rania
 *.xml
 *.iml
+*.pb
 
 # Translations
 *.mo
