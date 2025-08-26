@@ -1,8 +1,8 @@
 # Experiment settings
 prev_stage: 's_2'  # choices: none, s_1, s_2
 next_stage: 's_3'  # choices: s_1, s_2, s_3
-resume: false
-resume_path: ''
+resume: true
+resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_2_to_s_3/models/epoch59.tar'
 generation_num: 10
 mode: 'train' # choices: train, inference, infinity_gen
 infer_data_source: 'dataset' # choices: dataset, generation
@@ -37,7 +37,7 @@ batch_size: 4
 num_workers: 8
 pin_memory: false
 epochs: 1000
-check_every: 10
+check_every: 1
 
 # Loss and optimization settings
 clip_value: null

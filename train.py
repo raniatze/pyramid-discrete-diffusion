@@ -296,13 +296,11 @@ class Experiment(object):
         if not os.path.exists(self.args.resume_path):
             raise FileNotFoundError(f"The resume_path '{self.args.resume_path}' does not exist.")
         self.checkpoint_load(self.args.resume_path)
-        for epoch in range(self.current_epoch):
-            train_dict = {}
-            for metric_name, metric_values in self.train_metrics.items():
-                train_dict[metric_name] = metric_values[epoch]
-
-            for metric_name, metric_value in train_dict.items():
-                self.writer.add_scalar('base/{}'.format(metric_name), metric_value, global_step=epoch+1)
+        # Backfill all past metrics to TB so curves continue
+        if self.train_metrics:
+            for e in range(self.current_epoch):
+                for metric_name, values in self.train_metrics.items():
+                    self.writer.add_scalar(f'base/{metric_name}', values[e], global_step=e + 1)
 
     def log_metrics(self, dict, type):
         if len(type)==0:
@@ -313,7 +311,7 @@ class Experiment(object):
                 type[metric_name].append(metric_value)
 
 
-    def checkpoint_save(self, epoch):        
+    def checkpoint_save(self, epoch):
         checkpoint = {
                       'train_metrics': self.train_metrics,
                       'optimizer': self.optimizer.state_dict(),
@@ -331,8 +329,12 @@ class Experiment(object):
         self.model.load_state_dict(checkpoint['model'])
 
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-        if self.scheduler_iter: self.scheduler_iter.load_state_dict(checkpoint['scheduler_iter'])
-        if self.scheduler_epoch: self.scheduler_epoch.load_state_dict(checkpoint['scheduler_epoch'])
+        if self.scheduler_iter and checkpoint['scheduler_iter'] is not None:
+            self.scheduler_iter.load_state_dict(checkpoint['scheduler_iter'])
+        if self.scheduler_epoch and checkpoint['scheduler_epoch'] is not None:
+            self.scheduler_epoch.load_state_dict(checkpoint['scheduler_epoch'])
 
         self.train_metrics = checkpoint['train_metrics']
-        print("=> loaded checkpoint '{}'".format(resume_path))
+        self.current_epoch = len(next(iter(self.train_metrics.values()))) if self.train_metrics else 0
+
+        print(f"=> loaded checkpoint '{resume_path}' at epoch {self.current_epoch}")

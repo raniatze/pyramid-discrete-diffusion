@@ -8,7 +8,7 @@ from typing import Optional
 from features.image_feature import Image
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_2_to_s_3_20/GeneratedFusion')
+parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_2_to_s_3_20/PrevSceneContextFusion')
 parser.add_argument('--voxel_grid', action='store_false')
 parser.add_argument('--voxel_size', type=float, default=0.25)  # ADJUST
 parser.add_argument('--voxel_dims', type=int, nargs=3, default=[256, 256, 16], help='Dimensions of the voxel grid as [X Y Z]')  # ADJUST

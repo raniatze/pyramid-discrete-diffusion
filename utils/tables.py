@@ -148,3 +148,4 @@ def create_writer(args, log_path, no_log_keys):
     args_dict = clean_dict(vars(args), keys=no_log_keys)
     writer = SummaryWriter(os.path.join(log_path, 'tb'))
     writer.add_text("args", get_args_table(args_dict).get_html_string(), global_step=0)
+    return writer
