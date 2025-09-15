@@ -2,7 +2,7 @@
 prev_stage: 's_2'  # choices: none, s_1, s_2
 next_stage: 's_3'  # choices: s_1, s_2, s_3
 resume: true
-resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_2_to_s_3/models/epoch59.tar'
+resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_2_to_s_3_cnt/models/epoch245.tar'
 generation_num: 10
 mode: 'train' # choices: train, inference, infinity_gen
 infer_data_source: 'dataset' # choices: dataset, generation

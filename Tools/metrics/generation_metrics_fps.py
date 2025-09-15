@@ -137,10 +137,10 @@ def main():
         "/home/raniatze/Documents/skitti_workspace/cache/semantic_cache"
     )
     args.generated_samples_cache_path = Path(
-         "/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K/Rendering"
+         "/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/Rendering"
     )
     args.output_dir = Path(
-        "/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K/GenerationMetrics"
+        "/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/GenerationMetrics"
     )
     run_generation_metrics(args)
 
