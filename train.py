@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import re
 import os
 import torch
 import torch.nn.functional as F
@@ -156,25 +157,70 @@ class Experiment(object):
                 gen_num_recorder += 1
         return
 
+    def collect_finished_indices(self):
+        """
+        Returns a set of ints for which merged_<idx>.txt already exists.
+        Prefers <log_path>/GeneratedFusion/scene, falls back to scanning under log_path.
+        """
+        base = Path(self.args.log_path)
+        scene_dir = base / "GeneratedFusionDone"
+        search_root = scene_dir if scene_dir.exists() else base
+
+        done = set()
+        for p in search_root.rglob("merged_*.txt"):
+            m = re.fullmatch(r"merged_(\d+)\.txt", p.name)
+            if m:
+                done.add(int(m.group(1)))
+        return done
+
+    def merged_exists_for(self, iter_idx: int) -> bool:
+        base = Path(self.args.log_path)
+        scene_dir = base / "GeneratedFusionDone"
+        if (scene_dir / f"merged_{iter_idx}.txt").exists():
+            return True
+        else:
+            return False
+
 
 
     def sample(self):
         self.model.eval()
         with torch.no_grad():
             dataloader = self.loader
-            gen_num_recorder = 0
+            # === Resume awareness ===
+            done_indices = self.collect_finished_indices()
+            target_total = int(self.args.generation_num)
+            already_done = len(done_indices)
+            print(f"[Resume] Found {already_done} fused scenes on disk.")
+
+            if already_done >= target_total:
+                print("[Resume] Target already reached. Nothing to do.")
+                return 0
+
+            new_done = 0
+
+            # gen_num_recorder = 0
             for iterate, (prev_stage_data, next_stage_data, _) in enumerate(dataloader):
+                # Skip if this scene is already merged
+                if iterate in done_indices or self.merged_exists_for(iterate):
+                    continue
+
+                # Stop once we hit the total target (existing + new)
+                if already_done + new_done >= target_total:
+                    break
+
                 assert len(prev_stage_data) == len(next_stage_data) == 1
                 if len(prev_stage_data) == self.args.batch_size :
-                    gen_num_recorder += 1
+                    # gen_num_recorder += 1
                     if self.args.mode != 'infinity_gen':
-                        print(f"Working on generation process: {gen_num_recorder} / {self.args.generation_num}")
+                        # print(f"Working on generation process: {gen_num_recorder} / {self.args.generation_num}")
+                        print(f"Working on generation process: {already_done + new_done + 1} / {target_total}")
 
                     if self.args.prev_stage!='none':
                         num_sub_scenes = len(prev_stage_data[0])
                         if self.args.mode == 'infinity_gen':
                             infinite_scenes = self.args.infinity_size[0] * self.args.infinity_size[1]
-                            print(f"Working on INFINITE SCENE generation process: {gen_num_recorder} / {infinite_scenes}")
+                            # print(f"Working on INFINITE SCENE generation process: {gen_num_recorder} / {infinite_scenes}")
                         for block_idx in range(num_sub_scenes):
                             selected_prev_data = [scene[block_idx] for scene in prev_stage_data]  # list with len equal to bs
                             selected_next_data = [scene[block_idx] for scene in next_stage_data]  # list with len equal to bs
@@ -204,12 +250,12 @@ class Experiment(object):
                             generated = self.model.sample(context)
                             
                             if self.args.next_stage=='s_3':
-                                visualization(args=self.args, 
-                                              generated=generated, 
-                                              prev_data_voxels=prev_data_voxels, 
-                                              next_data_voxels=next_data_voxels, 
-                                              iteration = iterate, 
-                                              sub_scenes=block_idx, 
+                                visualization(args=self.args,
+                                              generated=generated,
+                                              prev_data_voxels=prev_data_voxels,
+                                              next_data_voxels=next_data_voxels,
+                                              iteration = iterate,
+                                              sub_scenes=block_idx,
                                               second_context=second_context)
                             else:
                                 visualization(args=self.args, 
@@ -278,8 +324,9 @@ class Experiment(object):
                                               prev_data_voxels=prev_data_voxels, 
                                               next_data_voxels=next_data_voxels, 
                                               iteration = iterate)
-                    if gen_num_recorder >= self.args.generation_num:
-                        return 0
+                    # if gen_num_recorder >= self.args.generation_num:
+                        # return 0
+                    new_done += 1
                 
             if self.args.mode == 'infinity_gen' and self.args.next_stage in ['s_2', 's_3'] and self.args.prev_stage != "none":
                 print("Working on infinite scene fusion...")
