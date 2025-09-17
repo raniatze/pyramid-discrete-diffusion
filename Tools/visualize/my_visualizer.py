@@ -9,25 +9,32 @@ from features.image_feature import Image
 
 def infer_voxel_params(folder: str):
     if "s_1" in folder:
+        stage = "s_1"
         voxel_size = 2.0
         voxel_dims = [32, 32, 4]
+        origin = np.array([1.0, -31.0, -3.5])
     elif "s_2" in folder:
+        stage = "s_2"
         voxel_size = 1.0
         voxel_dims = [64, 64, 8]
+        origin = np.array([0.5, -31.5, -3.5])
     elif "s_3" in folder:
+        stage = "s_3"
         voxel_size = 0.25
         voxel_dims = [256, 256, 16]
+        origin = np.array([0.125, -31.875, -3.5])
     else:
         raise ValueError(f"Unknown voxel size: {folder}")
 
-    return voxel_size, voxel_dims
+    return voxel_size, voxel_dims, origin, stage
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--folder', default='/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/GeneratedFusion')
+# parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_50K/Generated')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()
-opt.voxel_size, opt.voxel_dims = infer_voxel_params(opt.folder)
+opt.voxel_size, opt.voxel_dims, opt.origin, opt.stage = infer_voxel_params(opt.folder)
 
 # Color map for semantic labels
 pritti_colors = {
@@ -154,17 +161,16 @@ def make_voxel_grid_from_points(points, colors, remap=False):
     return voxel_grid
 
 def voxel_grid_to_cubes_with_wireframes(
-    points, colors, voxel_dims, voxel_size=0.25, voxel_z_offset=0.5
+    points, colors, voxel_dims, origin, stage, voxel_size=0.25, voxel_z_offset=0.5
 ):
     cubes = []
     wireframes = []
-    origin = np.array([0.125, -31.875, -3.5])
-    nz = 16
-    vz = 0.25
-    z_min = voxel_z_offset - nz * vz
-    z_max = voxel_z_offset
-    vz_eff = (z_max - z_min) / (nz - 1)
-    voxel_size = np.array([0.25, 0.25, vz_eff])
+    if stage == 's_3':
+        nz = voxel_dims[2]
+        z_min = voxel_z_offset - nz * voxel_size
+        z_max = voxel_z_offset
+        vz_eff = (z_max - z_min) / (nz - 1)
+        voxel_size = np.array([voxel_size, voxel_size, vz_eff])
 
     def get_cube_lines(wire_color, voxel_size):
         points = (
@@ -213,9 +219,21 @@ def voxel_grid_to_cubes_with_wireframes(
         center = origin + np.array([x, y, z]) * voxel_size
 
         # Add cube
-        cube = o3d.geometry.TriangleMesh.create_box(
-            width=voxel_size[0], height=voxel_size[1], depth=voxel_size[2]
-        )
+        if isinstance(voxel_size, (tuple, list, np.ndarray)):
+            cube = o3d.geometry.TriangleMesh.create_box(
+                width=voxel_size[0],
+                height=voxel_size[1],
+                depth=voxel_size[2]
+            )
+        elif isinstance(voxel_size, (int, float)):
+            # same size in all dimensions
+            cube = o3d.geometry.TriangleMesh.create_box(
+                width=voxel_size,
+                height=voxel_size,
+                depth=voxel_size
+            )
+        else:
+            raise TypeError(f"voxel_size must be a float or tuple of 3, got {type(voxel_size)}")
 
         cube.translate(center - 0.5 * voxel_size)
         cube.compute_vertex_normals()
@@ -251,7 +269,11 @@ renderer.scene.view.set_post_processing(False)
 
 for i, filename in enumerate(file_list):
     file_path = os.path.join(opt.folder, filename)
+    scene_idx = os.path.basename(file_path).split('.')[0].split('_')[1]
+    if scene_idx not in ['100', '10000', '10002']:
+        continue
     print(f"Visualizing: {file_path}")
+    print(scene_idx)
 
     if os.path.getsize(file_path) == 0:
         print("Skipping empty file.")
@@ -278,6 +300,6 @@ for i, filename in enumerate(file_list):
 
 
     # For visualizing voxel grids
-    voxel_grid, line_set = voxel_grid_to_cubes_with_wireframes(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size)
+    voxel_grid, line_set = voxel_grid_to_cubes_with_wireframes(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size, origin=opt.origin, stage=opt.stage)
     normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
     o3d.visualization.draw_geometries([voxel_grid, line_set, normal_frame], window_name=f"Scene {os.path.basename(file_path)}")

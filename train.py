@@ -158,10 +158,6 @@ class Experiment(object):
         return
 
     def collect_finished_indices(self):
-        """
-        Returns a set of ints for which merged_<idx>.txt already exists.
-        Prefers <log_path>/GeneratedFusion/scene, falls back to scanning under log_path.
-        """
         base = Path(self.args.log_path)
         scene_dir = base / "GeneratedFusionDone"
         search_root = scene_dir if scene_dir.exists() else base
