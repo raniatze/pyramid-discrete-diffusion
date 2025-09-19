@@ -37,8 +37,8 @@ logger_level: info                                  # Level of logger
 logger_format_string: null                          # Logger format string, set null to use the default format string
 
 # Local
-target_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/GeneratedFusion'
-save_path: '/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/Rendering'
+target_path: '/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/GeneratedFusion'
+save_path: '/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/Rendering'
 # Remote:
 # target_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_3_50K/GeneratedFusion'
 # save_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_3_50K/Rendering'

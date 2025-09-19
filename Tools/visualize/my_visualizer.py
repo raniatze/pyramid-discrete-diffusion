@@ -12,12 +12,12 @@ def infer_voxel_params(folder: str):
         stage = "s_1"
         voxel_size = 2.0
         voxel_dims = [32, 32, 4]
-        origin = np.array([1.0, -31.0, -3.5])
-    elif "s_2" in folder:
+        origin = np.array([1.0, -31.0, -7.5])
+    elif "s_2" in folder or "PrevSceneContextFusion" in folder:
         stage = "s_2"
         voxel_size = 1.0
         voxel_dims = [64, 64, 8]
-        origin = np.array([0.5, -31.5, -3.5])
+        origin = np.array([0.5, -31.5, -7.5])
     elif "s_3" in folder:
         stage = "s_3"
         voxel_size = 0.25
@@ -29,8 +29,7 @@ def infer_voxel_params(folder: str):
     return voxel_size, voxel_dims, origin, stage
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--folder', default='/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/GeneratedFusion')
-# parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_50K/Generated')
+parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/v1/s_3_20/GeneratedFusion')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()
@@ -165,12 +164,12 @@ def voxel_grid_to_cubes_with_wireframes(
 ):
     cubes = []
     wireframes = []
-    if stage == 's_3':
-        nz = voxel_dims[2]
-        z_min = voxel_z_offset - nz * voxel_size
-        z_max = voxel_z_offset
-        vz_eff = (z_max - z_min) / (nz - 1)
-        voxel_size = np.array([voxel_size, voxel_size, vz_eff])
+
+    nz = voxel_dims[2]
+    z_min = voxel_z_offset - nz * voxel_size
+    z_max = voxel_z_offset
+    vz_eff = (z_max - z_min) / (nz - 1)
+    voxel_size = np.array([voxel_size, voxel_size, vz_eff])
 
     def get_cube_lines(wire_color, voxel_size):
         points = (
@@ -270,10 +269,10 @@ renderer.scene.view.set_post_processing(False)
 for i, filename in enumerate(file_list):
     file_path = os.path.join(opt.folder, filename)
     scene_idx = os.path.basename(file_path).split('.')[0].split('_')[1]
-    if scene_idx not in ['100', '10000', '10002']:
+    if 'v1' in file_path and scene_idx not in ['4', '11', '14', '15', '16']:
         continue
     print(f"Visualizing: {file_path}")
-    print(scene_idx)
+    # print(scene_idx)
 
     if os.path.getsize(file_path) == 0:
         print("Skipping empty file.")
