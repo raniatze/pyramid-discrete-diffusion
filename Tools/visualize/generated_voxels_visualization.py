@@ -6,6 +6,8 @@ import argparse
 
 from typing import Optional
 from features.image_feature import Image
+from pathlib import Path
+from utils.line_mesh import LineMesh
 
 def infer_voxel_params(folder: str):
     if "s_1" in folder:
@@ -28,12 +30,21 @@ def infer_voxel_params(folder: str):
 
     return voxel_size, voxel_dims, origin, stage
 
+
+version = "v1"
+stage = "s_3"
+sub_folder = "GeneratedFusion"
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--folder', default='/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/v1/s_3_20/GeneratedFusion')
+parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
+parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/Visualizations')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()
 opt.voxel_size, opt.voxel_dims, opt.origin, opt.stage = infer_voxel_params(opt.folder)
+
+save_path = Path(opt.save_path)
+save_path.mkdir(parents=True, exist_ok=True)
 
 # Color map for semantic labels
 pritti_colors = {
@@ -57,110 +68,8 @@ pritti_colors = {
 }
 
 
-def open3d_camera_setup(renderer, voxel_dims, voxel_size: float = 0.25):
-
-    front_extent = voxel_dims[0] * voxel_size
-    side_extent = (voxel_dims[1] / 2) * voxel_size
-
-    # Camera setup when no remapping
-    camera_target = np.array([32, 32, 0])
-    camera_position = camera_target - np.array([0, 0, 1]) * 50
-    camera_up = np.array([1, 0, 0])  # X axis is the "up" direction
-
-    # Camera setup when remapping
-    # camera_target = np.array([32, 0, 0])
-    # camera_position = camera_target - np.array([0, 0, 1]) * 50
-    # camera_up = np.array([1, 0, 0])  # X axis is the "up" direction
-
-    renderer.scene.camera.look_at(camera_target, camera_position, camera_up)
-
-    # Define the orthographic projection parameters
-    left = -side_extent
-    right = side_extent
-    bottom = -front_extent / 2
-    top = front_extent / 2
-    near = 1
-    far = 100.0
-
-    # Set the orthographic projection
-    renderer.scene.camera.set_projection(
-        projection_type=o3d.visualization.rendering.Camera.Projection.Ortho,
-        left=left,
-        right=right,
-        bottom=bottom,
-        top=top,
-        near=near,
-        far=far,
-    )
-    return
-
-def bev_voxel_grid_rendering(
-    renderer, voxel_mesh, voxel_dims, voxel_size: float = 0.25
-) -> Optional[Image]:
-    material = o3d.visualization.rendering.MaterialRecord()
-    material.shader = "defaultUnlit"
-
-    renderer.scene.add_geometry("voxel_grid", voxel_mesh, material)
-
-    open3d_camera_setup(renderer, voxel_dims=voxel_dims, voxel_size=voxel_size)
-    rendered_image = renderer.render_to_image()
-    rendered_image = np.asarray(rendered_image)
-
-    plt.imshow(rendered_image)
-    plt.show()
-
-    # Filter out blank/empty renders
-    if np.all(rendered_image == 0) or np.all(rendered_image == 255):
-        return None
-
-    renderer.scene.clear_geometry()
-    return Image(data=rendered_image)
-
-def make_voxel_grid_from_points(points, colors, remap=False):
-    voxel_grid = o3d.geometry.VoxelGrid()
-    voxel_grid.voxel_size = opt.voxel_size
-    voxel_grid.origin = [0.0, 0.0, 0.0]
-
-    for i in range(points.shape[0]):
-        x, y, z = points[i]
-        r, g, b = colors[i]
-        color = np.array([r, g, b]) / 255.0
-
-        # Step 1: Re-orient axes (X = forward, Y = right, Z = up)
-        if remap:
-            rotated_x = y
-            rotated_y = x
-            rotated_z = z
-
-            # Step 2: Set ego vehicle at (max_x, center_y)
-            max_x = opt.voxel_dims[1]  # was Y direction
-            center_y = opt.voxel_dims[0] / 2  # was X direction
-
-            # Step 3: Shift world so that this point becomes the origin
-            world_x = -(rotated_x - max_x) * opt.voxel_size  # move back to 0
-            world_y = (rotated_y - center_y) * opt.voxel_size  # move to center
-            world_z = rotated_z * opt.voxel_size  # Z stays the same
-
-            # Step 4: Create voxel at new position
-            grid_index = (
-                int(round(world_x / opt.voxel_size)),
-                int(round(world_y / opt.voxel_size)),
-                int(round(world_z / opt.voxel_size)),
-            )
-        else:
-            grid_index = (
-                int(round(x)),
-                int(round(y)),
-                int(round(z))
-        )
-
-        voxel = o3d.geometry.Voxel(grid_index=grid_index, color=color)
-        voxel_grid.add_voxel(voxel)
-
-    return voxel_grid
-
 def voxel_grid_to_cubes_with_wireframes(
-    points, colors, voxel_dims, origin, stage, voxel_size=0.25, voxel_z_offset=0.5
+    points, colors, voxel_dims, origin, voxel_size=0.25, voxel_z_offset=0.5
 ):
     cubes = []
     wireframes = []
@@ -258,6 +167,49 @@ def voxel_grid_to_cubes_with_wireframes(
 
     return combined_cubes, combined_lineset
 
+def save_screenshot(primitive_meshes, lookat_custom, eye_custom, save_file, render_bev: bool = False):
+    vis = o3d.visualization.Visualizer()
+    vis.create_window(window_name="Screenshot Viewer", width=1024, height=1024, visible=True)
+
+    # Generate geometry
+    for primitive in primitive_meshes:
+        if isinstance(primitive, LineMesh):
+            for cylinder in primitive.cylinder_segments:
+                vis.add_geometry(cylinder)
+        else:
+            vis.add_geometry(primitive)
+
+    vis.poll_events()
+    vis.update_renderer()
+
+    # Get view control
+    view_ctl = vis.get_view_control()
+
+    # render_options = vis.get_render_option()
+    # render_options.line_width = 3
+
+    # Compute front direction
+    front = eye_custom - lookat_custom
+    front /= np.linalg.norm(front)
+
+    if render_bev:
+        up = np.array([1, 0, 0])
+    else:
+        up = np.array([0, 0, -1])
+
+    # Set camera
+    view_ctl.set_lookat(lookat_custom.tolist())
+    view_ctl.set_front(front.tolist())
+    view_ctl.set_up(up.tolist())
+    view_ctl.set_zoom(0.7)  # between 0.5 and 0.8
+
+    # Update view and capture screenshot
+    vis.poll_events()
+    vis.update_renderer()
+    vis.capture_screen_image(str(save_file))
+
+    vis.destroy_window()
+
 
 # === MAIN LOOP ===
 file_list = sorted(os.listdir(opt.folder))
@@ -271,6 +223,10 @@ for i, filename in enumerate(file_list):
     scene_idx = os.path.basename(file_path).split('.')[0].split('_')[1]
     if 'v1' in file_path and scene_idx not in ['4', '11', '14', '15', '16']:
         continue
+    elif 'v2' in file_path and scene_idx not in ['1', '8', '11', '14']:
+        continue
+    else:
+        pass
     print(f"Visualizing: {file_path}")
     # print(scene_idx)
 
@@ -287,18 +243,11 @@ for i, filename in enumerate(file_list):
     labels = points_colors[:, 0]
     colors = np.array([pritti_colors[int(l)] for l in labels])
 
-    # For BEV semantic map rendering only
-    # voxel_grid = make_voxel_grid_from_points(points, colors, remap=False)
-    # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
-    # o3d.visualization.draw_geometries([voxel_grid, normal_frame], window_name=f"Scene {i} before remapping")
-
-    # voxel_grid = make_voxel_grid_from_points(points, colors, remap=True)
-    # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
-    # o3d.visualization.draw_geometries([voxel_grid, normal_frame], window_name=f"Scene {i} after remapping")
-    # bev_voxel_grid_rendering(renderer, voxel_grid, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size)
-
-
     # For visualizing voxel grids
-    voxel_grid, line_set = voxel_grid_to_cubes_with_wireframes(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size, origin=opt.origin, stage=opt.stage)
-    normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
-    o3d.visualization.draw_geometries([voxel_grid, line_set, normal_frame], window_name=f"Scene {os.path.basename(file_path)}")
+    voxel_grid, line_set = voxel_grid_to_cubes_with_wireframes(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size, origin=opt.origin)
+    # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
+    # o3d.visualization.draw_geometries([voxel_grid, line_set], window_name=f"Scene {os.path.basename(file_path)}")
+
+    lookat_custom = np.array([32, 0, 0], dtype=float)
+    eye_custom = np.array([-20, 0, -50], dtype=float)
+    save_screenshot([voxel_grid, line_set], lookat_custom, eye_custom, save_file=Path(opt.save_path) / f"{scene_idx}.png")
