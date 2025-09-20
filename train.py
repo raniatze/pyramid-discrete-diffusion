@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import re
 import os
+import time
 import torch
 import torch.nn.functional as F
 import warnings
@@ -141,6 +142,8 @@ class Experiment(object):
 
     def sample_s1(self):
         self.model.eval()
+        total_diffusion_time = 0.0
+
         with torch.no_grad():
             gen_num_recorder = 0
             while gen_num_recorder < self.args.generation_num:
@@ -148,13 +151,25 @@ class Experiment(object):
                 context = np.zeros((32, 32, 4), dtype=int)
                 context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(
                     1)  # (1, 1, 32, 32, 4)
-                generated = self.model.sample(context)  # (1, 32, 32, 4)
+
+                # time the model only
+                start = time.time()
+                generated = self.model.sample(context) # (1, 32, 32, 4)
+                torch.cuda.synchronize()  # make sure GPU finished
+                end = time.time()
+                total_diffusion_time += (end - start)
+
                 visualization(args=self.args,
                               generated=generated,
                               prev_data_voxels=[None] * len(generated),
                               next_data_voxels=[None] * len(generated),
                               iteration=gen_num_recorder)
                 gen_num_recorder += 1
+
+        mean_time = total_diffusion_time / self.args.generation_num
+        print(f"\nTotal model time for {self.args.generation_num} samples: {total_diffusion_time:.4f} seconds")
+        print(f"Mean model time per sample: {mean_time:.4f} seconds")
+
         return
 
     def collect_finished_indices(self):
@@ -181,6 +196,11 @@ class Experiment(object):
 
     def sample(self):
         self.model.eval()
+        total_model_time = 0.0  # sum of ALL model.sample() calls (all blocks)
+        total_scene_time = 0.0  # sum of per-scene times (summing blocks)
+        model_calls = 0  # count of model.sample() calls (blocks)
+        scene_count = 0  # count of full scenes
+
         with torch.no_grad():
             dataloader = self.loader
             # === Resume awareness ===
@@ -217,6 +237,7 @@ class Experiment(object):
                         if self.args.mode == 'infinity_gen':
                             infinite_scenes = self.args.infinity_size[0] * self.args.infinity_size[1]
                             # print(f"Working on INFINITE SCENE generation process: {gen_num_recorder} / {infinite_scenes}")
+                        scene_time = 0.0
                         for block_idx in range(num_sub_scenes):
                             selected_prev_data = [scene[block_idx] for scene in prev_stage_data]  # list with len equal to bs
                             selected_next_data = [scene[block_idx] for scene in next_stage_data]  # list with len equal to bs
@@ -243,7 +264,15 @@ class Experiment(object):
                             else:
                                 context = _prev_data_voxels
 
+                            start = time.time()
                             generated = self.model.sample(context)
+                            torch.cuda.synchronize()
+                            end = time.time()
+
+                            block_time = end - start
+                            total_model_time += block_time
+                            scene_time += block_time
+                            model_calls += 1
                             
                             if self.args.next_stage=='s_3':
                                 visualization(args=self.args,
@@ -260,7 +289,12 @@ class Experiment(object):
                                               next_data_voxels=next_data_voxels, 
                                               iteration = iterate, 
                                               sub_scenes=block_idx)
-                        
+
+                        # one full scene is finished
+                        total_scene_time += scene_time
+                        scene_count += 1
+                        print(f"[Timing] Scene {iterate + 1} finished in {scene_time:.4f} s")
+
                         if self.args.next_stage == 's_3':
                             print("Working on scene fusion...")
                             save_merged_scenes(log_path=self.args.log_path,
@@ -332,6 +366,18 @@ class Experiment(object):
                                 infinity_size=self.args.infinity_size,
                                 high_res=True,
                                 folder_name='GeneratedFusion')
+
+            # === compute means ===
+            mean_block_time = (total_model_time / model_calls) if model_calls > 0 else float('nan')
+            mean_scene_time = (total_scene_time / scene_count) if scene_count > 0 else float('nan')
+
+            print(f"\n[Timing Summary]")
+            print(f"  Model calls (blocks): {model_calls}")
+            print(f"  Scenes generated:     {scene_count}")
+            print(f"  Total model time:     {total_model_time:.4f} s")
+            print(f"  Total scene time:     {total_scene_time:.4f} s")
+            print(f"  Mean per block call:  {mean_block_time:.6f} s")
+            print(f"  Mean per full scene:  {mean_scene_time:.6f} s")
                     
             return 0
 
