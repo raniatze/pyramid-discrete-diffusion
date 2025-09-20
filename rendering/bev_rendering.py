@@ -96,18 +96,16 @@ def bev_voxel_grid_rendering(
     renderer.scene.clear_geometry()
     return Image(data=rendered_image)
 
-
 def voxel_grid_to_cubes(
-    points, colors, voxel_z_offset=0.5
+    points, colors, voxel_dims, origin, voxel_size=0.25, voxel_z_offset=0.5
 ):
     cubes = []
-    origin = np.array([0.125, -31.875, -3.5])
-    nz = 16
-    vz = 0.25
-    z_min = voxel_z_offset - nz * vz
+
+    nz = voxel_dims[2]
+    z_min = voxel_z_offset - nz * voxel_size
     z_max = voxel_z_offset
     vz_eff = (z_max - z_min) / (nz - 1)
-    voxel_size = np.array([0.25, 0.25, vz_eff])
+    voxel_size = np.array([voxel_size, voxel_size, vz_eff])
 
     for i in range(points.shape[0]):
         y, x, z = points[i]  # these are voxel indices and not world coordinates
@@ -117,9 +115,21 @@ def voxel_grid_to_cubes(
         center = origin + np.array([x, y, z]) * voxel_size
 
         # Add cube
-        cube = o3d.geometry.TriangleMesh.create_box(
-            width=voxel_size[0], height=voxel_size[1], depth=voxel_size[2]
-        )
+        if isinstance(voxel_size, (tuple, list, np.ndarray)):
+            cube = o3d.geometry.TriangleMesh.create_box(
+                width=voxel_size[0],
+                height=voxel_size[1],
+                depth=voxel_size[2]
+            )
+        elif isinstance(voxel_size, (int, float)):
+            # same size in all dimensions
+            cube = o3d.geometry.TriangleMesh.create_box(
+                width=voxel_size,
+                height=voxel_size,
+                depth=voxel_size
+            )
+        else:
+            raise TypeError(f"voxel_size must be a float or tuple of 3, got {type(voxel_size)}")
 
         cube.translate(center - 0.5 * voxel_size)
         cube.compute_vertex_normals()
@@ -131,11 +141,13 @@ def voxel_grid_to_cubes(
         # print("Max corner:", verts.max(axis=0))
         # print("Cube center from verts:", (verts.min(axis=0) + verts.max(axis=0)) / 2)
 
+
     combined_cubes = o3d.geometry.TriangleMesh()
     for cube in cubes:
         combined_cubes += cube
 
     return combined_cubes
+
 
 def run_semantic_map_rendering(cfg: DictConfig, worker: WorkerPool) -> None:
     """
@@ -194,7 +206,13 @@ def semantic_map_rendering(
 
             save_path = Path(cfg.save_path)
             os.makedirs(save_path, exist_ok=True)
-            file = re.search(r'merged_(\d+)\.txt$', os.path.basename(target_path)).group(1)
+            if cfg.stage == "s_3":
+                file = re.search(r'merged_(\d+)\.txt$', os.path.basename(target_path)).group(1)
+            elif cfg.stage == "s_2":
+                file = re.search(r'result_(\d+)_\d+\.txt$', os.path.basename(target_path)).group(1)
+            else:
+                raise ValueError(f"Unknown stage: {cfg.stage}")
+
             semantic_file_path = save_path / f"bev_semantic_map_{file}"
             if semantic_file_path.with_suffix(".gz").exists():
                 logger.info(f"Semantic file path {semantic_file_path} already exists!")
@@ -209,7 +227,7 @@ def semantic_map_rendering(
             labels = points_colors[:, 0]
             colors = np.array([pritti_colors[int(l)] for l in labels])
 
-            voxel_grid = voxel_grid_to_cubes(points, colors)
+            voxel_grid = voxel_grid_to_cubes(points, colors, voxel_dims=cfg.grid_shape, origin=np.asarray(cfg.origin, dtype=float), voxel_size=cfg.voxel_size, voxel_z_offset=cfg.voxel_z_offset)
             bev_semantic_map: Image = bev_voxel_grid_rendering(
                 renderer, voxel_grid, grid_shape=cfg.grid_shape, voxel_size=cfg.voxel_size
             )

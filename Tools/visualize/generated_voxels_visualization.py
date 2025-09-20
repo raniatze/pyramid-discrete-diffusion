@@ -31,9 +31,9 @@ def infer_voxel_params(folder: str):
     return voxel_size, voxel_dims, origin, stage
 
 
-version = "v1"
-stage = "s_3"
-sub_folder = "GeneratedFusion"
+version = "v3"
+stage = "s_1"
+sub_folder = "Generated"
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
@@ -224,6 +224,8 @@ for i, filename in enumerate(file_list):
     if 'v1' in file_path and scene_idx not in ['4', '11', '14', '15', '16']:
         continue
     elif 'v2' in file_path and scene_idx not in ['1', '8', '11', '14']:
+        continue
+    elif 'v3' in file_path and scene_idx not in ['0', '1', '7', '9', '11', '15', '19']:
         continue
     else:
         pass
