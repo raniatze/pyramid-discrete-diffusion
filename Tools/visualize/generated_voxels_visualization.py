@@ -32,12 +32,14 @@ def infer_voxel_params(folder: str):
 
 
 version = "v3"
-stage = "s_1"
-sub_folder = "Generated"
+stage = "s_3"
+sub_folder = "GeneratedFusion"
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
-parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/Visualizations')
+# parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
+# parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/Visualizations')
+parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_100/{sub_folder}')
+parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_100/Visualizations')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()
@@ -247,9 +249,9 @@ for i, filename in enumerate(file_list):
 
     # For visualizing voxel grids
     voxel_grid, line_set = voxel_grid_to_cubes_with_wireframes(points, colors, voxel_dims=opt.voxel_dims, voxel_size=opt.voxel_size, origin=opt.origin)
-    # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
-    # o3d.visualization.draw_geometries([voxel_grid, line_set], window_name=f"Scene {os.path.basename(file_path)}")
+    normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
+    o3d.visualization.draw_geometries([voxel_grid, line_set, normal_frame], window_name=f"Scene {os.path.basename(file_path)}")
 
-    lookat_custom = np.array([32, 0, 0], dtype=float)
-    eye_custom = np.array([-20, 0, -50], dtype=float)
-    save_screenshot([voxel_grid, line_set], lookat_custom, eye_custom, save_file=Path(opt.save_path) / f"{scene_idx}.png")
+    # lookat_custom = np.array([32, 0, 0], dtype=float)
+    # eye_custom = np.array([-20, 0, -50], dtype=float)
+    # save_screenshot([voxel_grid, line_set], lookat_custom, eye_custom, save_file=Path(opt.save_path) / f"{scene_idx}.png")
