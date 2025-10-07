@@ -21,7 +21,7 @@ train_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel
 quantized_train_data_path: ''
 infer_data_path: ''
 quantized_infer_data_path: ''
-data_argumentation: true
+data_argumentation: false
 
 # Hardware and distribution settings
 # gpu: 0

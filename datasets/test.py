@@ -122,7 +122,7 @@ def load_computed_feature_from_folder(feature_file: Path) -> np.ndarray:
         raise RuntimeError(f"Corrupted or unreadable file: {feature_file}") from e
 
 # Start directory
-data_dir = Path("/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_1_to_s_2_50K")
+data_dir = Path("/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/Rendering")
 
 # Iterate over all .gz files
 all_files = list(data_dir.rglob("*.gz"))

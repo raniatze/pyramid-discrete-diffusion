@@ -216,6 +216,7 @@ class PrittiDataset(Dataset):
         return prev_stage_data, next_stage_data, counts
 
     def apply_data_augmentation(self, next_stage_data, counts, quantized_output):
+        raise Exception("No data augmentation should be applied")
         if np.random.randint(2):
             next_stage_data = np.flip(next_stage_data, axis=0)
             counts = np.flip(counts, axis=0)

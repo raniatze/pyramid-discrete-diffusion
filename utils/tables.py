@@ -90,7 +90,7 @@ def visualization(args, generated, prev_data_voxels, next_data_voxels, iteration
                 second_index = torch.nonzero(masked_context_i == i, as_tuple=False)
                 masked_context_index.append(F.pad(second_index,(1,0),'constant',value = i))
 
-        generated_indexes = torch.cat(generated_index, dim = 0).cpu().numpy()
+        generated_indexes = torch.cat(generated_index, dim = 0).cpu().numpy()  # (total_N, 4)
         if next_data_index:
             next_data_indexes = torch.cat(next_data_index, dim=0).cpu().numpy()
         else:
@@ -115,25 +115,25 @@ def visualization(args, generated, prev_data_voxels, next_data_voxels, iteration
             # save_path.mkdir(parents=True, exist_ok=True)
             # store_computed_feature_to_folder(save_path / f"prev_{(iteration * args.batch_size) + batch}_{sub_scenes}", conditioning_voxel_grid)
 
-            np.savetxt(args.log_path+'/Generated/result_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), generated_indexes)
-            np.savetxt(args.log_path+'/PrevSceneContext/prev_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), prev_data_indexes)
+            np.savetxt(args.log_path+'/Generated/result_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), generated_indexes.astype(np.int32), fmt="%d")
+            np.savetxt(args.log_path+'/PrevSceneContext/prev_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), prev_data_indexes.astype(np.int32), fmt="%d")
             if args.infer_data_source == 'dataset' and args.prev_stage != 'none':
                 # save_path = Path(args.log_path) / "Voxels" / "GroundTruth"
                 # save_path.mkdir(parents=True, exist_ok=True)
                 # store_computed_feature_to_folder(save_path / f"gt_{(iteration * args.batch_size) + batch}_{sub_scenes}", ground_truth_voxel_grid)
-                np.savetxt(args.log_path+'/GroundTruth/gt_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), next_data_indexes)
+                np.savetxt(args.log_path+'/GroundTruth/gt_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), next_data_indexes.astype(np.int32), fmt="%d")
             if second_context is not None:
-                np.savetxt(args.log_path+'/MaskedSceneContext/masked_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), masked_context_indexes)
+                np.savetxt(args.log_path+'/MaskedSceneContext/masked_{}_{}.txt'.format((iteration * args.batch_size) + batch, sub_scenes), masked_context_indexes.astype(np.int32), fmt="%d")
         else:
             # save_path = Path(args.log_path) / "Voxels" / "Generated"
             # save_path.mkdir(parents=True, exist_ok=True)
             # store_computed_feature_to_folder(save_path / f"result_{(iteration * args.batch_size) + batch}", generated_voxel_grid)
-            np.savetxt(args.log_path+'/Generated/result_{}.txt'.format((iteration * args.batch_size) + batch), generated_indexes)  # generated_indexes: (total_num_fg_voxels, 4)
-            if args.infer_data_source == 'dataset':
+            np.savetxt(args.log_path+'/Generated/result_{}.txt'.format((iteration * args.batch_size) + batch), generated_indexes.astype(np.int32), fmt="%d")  # generated_indexes: (total_num_fg_voxels, 4)
+            # if args.infer_data_source == 'dataset':
                 # save_path = Path(args.log_path) / "Voxels" / "GroundTruth"
                 # save_path.mkdir(parents=True, exist_ok=True)
                 # store_computed_feature_to_folder(save_path / f"gt_{(iteration * args.batch_size) + batch}", ground_truth_voxel_grid)
-                np.savetxt(args.log_path+'/GroundTruth/gt_{}.txt'.format((iteration * args.batch_size) + batch), next_data_indexes)  # next_data_indexes: (total_num_fg_voxels', 4)
+                # np.savetxt(args.log_path+'/GroundTruth/gt_{}.txt'.format((iteration * args.batch_size) + batch), next_data_indexes.astype(np.int32), fmt="%d")  # next_data_indexes: (total_num_fg_voxels', 4)
         
 
 def save_args(args, log_path):

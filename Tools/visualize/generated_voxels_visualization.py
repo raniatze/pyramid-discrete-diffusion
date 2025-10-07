@@ -32,14 +32,14 @@ def infer_voxel_params(folder: str):
 
 
 version = "v3"
-stage = "s_3"
-sub_folder = "GeneratedFusion"
+stage = "s_1"
+sub_folder = "Generated"  # NOTE: Use GeneratedFusion for s_3
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
 # parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/Visualizations')
-parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_100/{sub_folder}')
-parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_100/Visualizations')
+parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_no_augmentation/{sub_folder}')
+parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_no_augmentation/Visualizations')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()
@@ -120,7 +120,7 @@ def voxel_grid_to_cubes_with_wireframes(
         return line_set
 
     for i in range(points.shape[0]):
-        y, x, z = points[i]  # these are voxel indices and not world coordinates
+        x, y, z = points[i]  # these are voxel indices and not world coordinates
         r, g, b = colors[i]
         color = np.array([r, g, b]) / 255.0
         wire_color = color * 0.8  # Slightly darker version of fill color

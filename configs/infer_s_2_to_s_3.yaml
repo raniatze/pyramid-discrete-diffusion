@@ -2,14 +2,14 @@
 prev_stage: 's_2'  # choices: none, s_1, s_2
 next_stage: 's_3'  # choices: s_1, s_2, s_3
 resume: true
-resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_2_to_s_3_cnt/models/epoch240.tar'
+resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_3_no_augmentation/models/epoch240.tar'
 generation_num: 50000
 mode: 'inference' # choices: train, inference, infinity_gen
 infer_data_source: 'generation' # choices: dataset, generation ### TODO: Change to 'generation' if you want to use the generated data from s_2
 # infer_data_source: 'dataset'
 
 # Scene settings
-prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_2_50K/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_2.
+prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_2_no_augmentation/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_2.
 # prev_scene_path: ''
 scene_fusion_method: 'discard'  # choices: discard, force, vote
 mask_ratio: 0.0625

@@ -26,7 +26,7 @@ def run_visualization(args):
 def main():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
-    args.target_path = Path("/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/Rendering")
+    args.target_path = Path("/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/Rendering")
     run_visualization(args)
 
 
