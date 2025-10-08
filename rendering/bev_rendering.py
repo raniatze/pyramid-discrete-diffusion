@@ -8,14 +8,14 @@ import re
 import logging
 import matplotlib.pyplot as plt
 
+from scipy.ndimage import zoom
 from omegaconf import DictConfig
 from typing import Dict, List, Union
 from pathlib import Path
 from typing import Optional
 
 from features.image_feature import Image
-from features.voxel_feature import VoxelGrid
-from utils.tables import store_computed_feature_to_folder, load_computed_feature_from_folder
+from utils.tables import store_computed_feature_to_folder
 from multithreading.worker_utils import worker_map
 from multithreading.worker_pool import WorkerPool
 
@@ -41,6 +41,19 @@ pritti_colors = {
     15: [250, 170, 30],
     16: [0, 128, 192],
 }
+
+
+def infer_shape(stage: str):
+    if stage == "s_1":
+        shape = [32, 32, 4]
+    elif stage == "s_2":
+        shape = [64, 64, 8]
+    elif stage == "s_3":
+        shape = [256, 256, 16]
+    else:
+        raise ValueError(f"Unknown stage: {stage}")
+    return shape
+
 
 def open3d_camera_setup(renderer, grid_shape, voxel_size):
 
@@ -96,57 +109,59 @@ def bev_voxel_grid_rendering(
     renderer.scene.clear_geometry()
     return Image(data=rendered_image)
 
+
 def voxel_grid_to_cubes(
-    points, colors, voxel_dims, origin, voxel_size=0.25, voxel_z_offset=0.5
+    voxel_grid_data: np.ndarray,
+    origin: np.ndarray,
+    voxel_size=0.25,
+    voxel_z_offset=0.5,
 ):
-    cubes = []
+    assert voxel_grid_data.ndim == 3
+    H, W, Z = voxel_grid_data.shape
 
-    nz = voxel_dims[2]
-    z_min = voxel_z_offset - nz * voxel_size
+    z_min = voxel_z_offset - Z * voxel_size
     z_max = voxel_z_offset
-    vz_eff = (z_max - z_min) / (nz - 1)
-    voxel_size = np.array([voxel_size, voxel_size, vz_eff])
+    vz_eff = (z_max - z_min) / (Z - 1)
+    vs = np.array([voxel_size, voxel_size, vz_eff], dtype=float)
 
-    for i in range(points.shape[0]):
-        x, y, z = points[i]  # these are voxel indices and not world coordinates
-        r, g, b = colors[i]
-        color = np.array([r, g, b]) / 255.0
+    # Only occupied voxels
+    occ = np.argwhere(voxel_grid_data > 0)
+    if occ.size == 0:
+        return o3d.geometry.TriangleMesh()
 
-        center = origin + np.array([x, y, z]) * voxel_size
+    # Colors lookup (avoid Python dict in the loop)
+    max_label = max(pritti_colors.keys())
+    color_lut = np.zeros((max_label + 1, 3), dtype=float)
+    for k, v in pritti_colors.items():
+        color_lut[k] = np.array(v, dtype=float) / 255.0
+    labels = voxel_grid_data[occ[:, 0], occ[:, 1], occ[:, 2]]
+    colors = color_lut[labels]
 
-        # Add cube
-        if isinstance(voxel_size, (tuple, list, np.ndarray)):
-            cube = o3d.geometry.TriangleMesh.create_box(
-                width=voxel_size[0],
-                height=voxel_size[1],
-                depth=voxel_size[2]
-            )
-        elif isinstance(voxel_size, (int, float)):
-            # same size in all dimensions
-            cube = o3d.geometry.TriangleMesh.create_box(
-                width=voxel_size,
-                height=voxel_size,
-                depth=voxel_size
-            )
-        else:
-            raise TypeError(f"voxel_size must be a float or tuple of 3, got {type(voxel_size)}")
+    # Precompute voxel centers
+    origin = np.asarray(origin, dtype=float)
+    centers = origin + occ.astype(float) * vs
 
-        cube.translate(center - 0.5 * voxel_size)
-        cube.compute_vertex_normals()
-        cube.paint_uniform_color(color)
+    # Create one base cube and reuse it
+    base_cube = o3d.geometry.TriangleMesh.create_box(
+        width=vs[0], height=vs[1], depth=vs[2]
+    )
+
+    # Build all cubes (copy + translate + color), then merge
+    cubes = []
+    half_vs = 0.5 * vs
+    for c, col in zip(centers, colors):
+        cube = o3d.geometry.TriangleMesh(base_cube)  # cheap copy
+        cube.translate(c - half_vs, relative=False)
+        cube.paint_uniform_color(col)
         cubes.append(cube)
 
-        # verts = np.asarray(cube.vertices)
-        # print("Min corner:", verts.min(axis=0))
-        # print("Max corner:", verts.max(axis=0))
-        # print("Cube center from verts:", (verts.min(axis=0) + verts.max(axis=0)) / 2)
-
-
-    combined_cubes = o3d.geometry.TriangleMesh()
+    combined = o3d.geometry.TriangleMesh()
     for cube in cubes:
-        combined_cubes += cube
+        combined += cube
 
-    return combined_cubes
+    # Compute normals once (after merging)
+    combined.compute_vertex_normals()
+    return combined
 
 
 def run_semantic_map_rendering(cfg: DictConfig, worker: WorkerPool) -> None:
@@ -199,6 +214,13 @@ def semantic_map_rendering(
         renderer.scene.set_background([1.0, 1.0, 1.0, 1.0])
         renderer.scene.view.set_post_processing(False)
 
+        if cfg.stage in ["s_1", "s_2"]:
+            upsample_needed = True
+        else:
+            upsample_needed = False
+
+        gen_shape = infer_shape(cfg.stage)
+
         for idx, target_path in enumerate(target_paths):
             logger.info(
                 f"Processing scenario {idx + 1} / {len(target_paths)} in thread_id={thread_id}"
@@ -225,13 +247,27 @@ def semantic_map_rendering(
                 print(f"Invalid format in file: {target_path}. Expected x y z label.")
                 continue
 
-            points = points_colors[:, -3:]
-            labels = points_colors[:, 0]
-            colors = np.array([pritti_colors[int(l)] for l in labels])
+            ijk = points_colors[:, -3:].astype(np.int32)
+            labels = points_colors[:, 0].astype(np.uint8)
 
-            voxel_grid = voxel_grid_to_cubes(points, colors, voxel_dims=cfg.grid_shape, origin=np.asarray(cfg.origin, dtype=float), voxel_size=cfg.voxel_size, voxel_z_offset=cfg.voxel_z_offset)
+            voxel_data = np.zeros(gen_shape, dtype=np.uint8)
+            voxel_data[ijk[:, 0], ijk[:, 1], ijk[:, 2]] = labels
+
+            # upsample rec to fine grid if needed (nearest neighbor for labels)
+            if upsample_needed:
+                zoom_factors = (
+                    cfg.fine_grid_shape[0] / voxel_data.shape[0],
+                    cfg.fine_grid_shape[1] / voxel_data.shape[1],
+                    cfg.fine_grid_shape[2] / voxel_data.shape[2],
+                )
+                voxel_data = zoom(voxel_data, zoom_factors, order=0)
+
+            voxel_grid = voxel_grid_to_cubes(voxel_data, origin=np.asarray(cfg.fine_origin, dtype=float), voxel_size=cfg.fine_voxel_size, voxel_z_offset=cfg.voxel_z_offset)
+            # normal_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=3.0)
+            # o3d.visualization.draw_geometries([voxel_grid, normal_frame], window_name="Final Voxel Grid")
+
             bev_semantic_map: Image = bev_voxel_grid_rendering(
-                renderer, voxel_grid, grid_shape=cfg.grid_shape, voxel_size=cfg.voxel_size
+                renderer, voxel_grid, grid_shape=cfg.fine_grid_shape, voxel_size=cfg.fine_voxel_size
             )
 
             if bev_semantic_map is None:

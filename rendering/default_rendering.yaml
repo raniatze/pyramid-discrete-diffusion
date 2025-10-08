@@ -46,17 +46,7 @@ pixel_height: 256
 
 voxel_z_offset: 0.5
 
-# For s1 stage
-grid_shape: [32, 32, 4]
-voxel_size: 2.0
-origin: [1.0, -31.0, -7.5]
-
-# For s2 stage
-# grid_shape: [64, 64, 8]
-# voxel_size: 1.0
-# origin: [0.5, -31.5, -7.5]
-
-# For s3 stage
-# voxel_size: 0.25
-# grid_shape: [256, 256, 16]
-# origin: [0.125, -31.875, -3.5]
+# Fine stage
+fine_voxel_size: 0.25
+fine_grid_shape: [256, 256, 16]
+fine_origin: [0.125, -31.875, -3.5]
