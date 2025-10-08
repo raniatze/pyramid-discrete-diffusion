@@ -648,21 +648,22 @@ def extract_distance(path):
 
 
 if __name__ == "__main__":
-    nhood_size = (5,)
-    mode = "distance"
-    num_samples = 10000
+    nhood_size = (3,)
+    mode = "fps"
+    num_samples = 1000
     distance_threshold = 10
+    stage = "s_1"
     if mode == "distance":
-        ref_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/GenerationMetrics/ref_batch_distance_{distance_threshold}m.npz"
-        samples_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/GenerationMetrics/samples_batch_distance_{distance_threshold}m.npz"
+        ref_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics/ref_batch_distance_{distance_threshold}m.npz"
+        samples_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics/samples_batch_distance_{distance_threshold}m.npz"
         ref_distance = extract_distance(ref_batch)
         generated_distance = extract_distance(samples_batch)
         assert (
             ref_distance == generated_distance
         ), f"Reference batch ({ref_distance}) and samples batch ({generated_distance}) do not match!"
     elif mode == "fps":  # farthest point sampling
-        ref_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/GenerationMetrics/ref_batch_fps_{num_samples}.npz"
-        samples_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/GenerationMetrics/samples_batch_fps_{num_samples}.npz"
+        ref_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics/ref_batch_fps_{num_samples}.npz"
+        samples_batch = f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics/samples_batch_fps_{num_samples}.npz"
         ref_samples = extract_samples(ref_batch)
         generated_samples = extract_samples(samples_batch)
         assert (
