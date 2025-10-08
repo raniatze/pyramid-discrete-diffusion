@@ -37,16 +37,26 @@ logger_level: info                                  # Level of logger
 logger_format_string: null                          # Logger format string, set null to use the default format string
 
 # Local
-target_path: '/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/Generated'
-save_path: '/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/Rendering'
-# Remote:
-# target_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_3_50K/GeneratedFusion'
-# save_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_3_50K/Rendering'
+stage: "s_1"
+target_path: '/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_1_50K_no_augmentation/Generated'
+save_path: '/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_1_50K_no_augmentation/Rendering'
 generated_samples_cache_size: 50000
 pixel_width: 256
 pixel_height: 256
-stage: "s_2"
-grid_shape: [64, 64, 8]
-voxel_size: 1.0
-origin: [0.5, -31.5, -7.5]
+
 voxel_z_offset: 0.5
+
+# For s1 stage
+grid_shape: [32, 32, 4]
+voxel_size: 2.0
+origin: [1.0, -31.0, -7.5]
+
+# For s2 stage
+# grid_shape: [64, 64, 8]
+# voxel_size: 1.0
+# origin: [0.5, -31.5, -7.5]
+
+# For s3 stage
+# voxel_size: 0.25
+# grid_shape: [256, 256, 16]
+# origin: [0.125, -31.875, -3.5]

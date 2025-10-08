@@ -136,16 +136,17 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
+    stage = "s_1"
     args.distance_threshold = 10
     args.generated_samples_cache_size = 50000
     args.reference_cache_path = Path(
         "/home/raniatze/Documents/skitti_workspace/cache/semantic_cache"
     )
     args.generated_samples_cache_path = Path(
-        "/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/Rendering"
+        f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/Rendering"
     )
     args.output_dir = Path(
-        "/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_2_50K/GenerationMetrics"
+        f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics"
     )
     run_generation_metrics(args)
 

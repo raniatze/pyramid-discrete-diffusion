@@ -173,8 +173,8 @@ def run_generation_metrics(args) -> None:
 
     # PDFs
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    pdf_ref = args.output_dir / f"ref_used_for_metrics_{reference_maps.shape[0]}.pdf"
-    pdf_gen = args.output_dir / f"gen_used_for_metrics_{generated_maps.shape[0]}.pdf"
+    pdf_ref = args.output_dir / f"ref_used_for_fps_{reference_maps.shape[0]}.pdf"
+    pdf_gen = args.output_dir / f"gen_used_for_fps_{generated_maps.shape[0]}.pdf"
 
     # single-set PDFs
     save_images_grid_pdf(
@@ -187,7 +187,6 @@ def run_generation_metrics(args) -> None:
     logger.info(f"Saved PDF of reference samples actually used: {pdf_ref}")
     logger.info(f"Saved PDF of generated samples actually used: {pdf_gen}")
 
-    '''
     reference_save_path = Path(args.output_dir) / f"ref_batch_fps_{num_samples}.npz"
     generated_save_path = Path(args.output_dir) / f"samples_batch_fps_{num_samples}.npz"
 
@@ -202,7 +201,6 @@ def run_generation_metrics(args) -> None:
     )
 
     return None
-    '''
 
 def main():
     parser = argparse.ArgumentParser()
@@ -213,16 +211,17 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    args.num_samples = 1000
+    stage = "s_1"
+    args.num_samples = 5000
     args.generated_samples_cache_size = 50000
     args.reference_cache_path = Path(
         "/home/raniatze/Documents/skitti_workspace/cache/semantic_cache"
     )
     args.generated_samples_cache_path = Path(
-         "/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/Rendering"
+         f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/Rendering"
     )
     args.output_dir = Path(
-        "/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/s_3_50K/GenerationMetrics"
+        f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics"
     )
     run_generation_metrics(args)
 

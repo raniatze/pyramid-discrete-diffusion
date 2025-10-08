@@ -38,8 +38,8 @@ sub_folder = "Generated"  # NOTE: Use GeneratedFusion for s_3
 parser = argparse.ArgumentParser()
 # parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
 # parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/Visualizations')
-parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_no_augmentation/{sub_folder}')
-parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_no_augmentation/Visualizations')
+parser.add_argument('--folder', default=f'/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/{sub_folder}')
+parser.add_argument('--save_path', default=f'/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/Visualizations')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()

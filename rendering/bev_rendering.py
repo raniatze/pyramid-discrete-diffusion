@@ -108,7 +108,7 @@ def voxel_grid_to_cubes(
     voxel_size = np.array([voxel_size, voxel_size, vz_eff])
 
     for i in range(points.shape[0]):
-        y, x, z = points[i]  # these are voxel indices and not world coordinates
+        x, y, z = points[i]  # these are voxel indices and not world coordinates
         r, g, b = colors[i]
         color = np.array([r, g, b]) / 255.0
 
@@ -210,6 +210,8 @@ def semantic_map_rendering(
                 file = re.search(r'merged_(\d+)\.txt$', os.path.basename(target_path)).group(1)
             elif cfg.stage == "s_2":
                 file = re.search(r'result_(\d+)_\d+\.txt$', os.path.basename(target_path)).group(1)
+            elif cfg.stage == "s_1":
+                file = re.search(r'result_(\d+)\.txt$', os.path.basename(target_path)).group(1)
             else:
                 raise ValueError(f"Unknown stage: {cfg.stage}")
 
