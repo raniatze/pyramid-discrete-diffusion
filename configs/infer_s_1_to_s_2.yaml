@@ -9,7 +9,7 @@ infer_data_source: 'generation' # choices: dataset, generation ### TODO: Change 
 # infer_data_source: 'dataset'
 
 # Scene settings
-prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_1_no_augmentation/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
+prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_1_50K_no_augmentation/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
 # prev_scene_path: ''
 scene_fusion_method: 'discard'  # choices: discard, force, vote
 mask_ratio: 0.0625
