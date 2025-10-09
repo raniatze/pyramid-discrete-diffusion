@@ -14,6 +14,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 logger = logging.getLogger(__name__)
 
+def read_manifest(path: Path):
+    """Reads a list of IDs (one per line) from a manifest file."""
+    with open(path, "r") as f:
+        return [line.strip() for line in f if line.strip()]
+
 def _chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i+n]
@@ -149,14 +154,11 @@ def run_generation_metrics(args) -> None:
         f"Loaded {len(reference_sample_paths)} reference paths from {reference_batch_path}"
     )
 
-    generated_sample_paths = glob.glob(
-        f"{args.generated_samples_cache_path}/bev_semantic_map_*.gz"
-    )
-    assert len(generated_sample_paths) == args.generated_samples_cache_size
-
-    selected_generated_sample_paths = random.sample(
-        generated_sample_paths, min(num_samples, len(generated_sample_paths))
-    )
+    selected_ids = read_manifest(args.manifest_path)
+    selected_generated_sample_paths = [
+        args.generated_samples_cache_path / f"bev_semantic_map_{sid}.gz"
+        for sid in selected_ids
+    ]
 
     assert (
         len(reference_sample_paths)
@@ -213,6 +215,7 @@ def main():
 
     stage = "s_1"
     args.num_samples = 5000
+    args.mode = f"fps_{args.num_samples}"
     args.generated_samples_cache_size = 50000
     args.reference_cache_path = Path(
         "/home/raniatze/Documents/skitti_workspace/cache/semantic_cache"
@@ -222,6 +225,9 @@ def main():
     )
     args.output_dir = Path(
         f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/GenerationMetrics"
+    )
+    args.manifest_path = Path(
+        f"/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/selected_ids_{args.mode}.txt"
     )
     run_generation_metrics(args)
 
