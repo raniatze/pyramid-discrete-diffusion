@@ -34,6 +34,9 @@ def get_args():
 
     config = load_config(args.config)
 
+    if 'log_path' in config:
+        args.log_path = config['log_path']
+
     parser.set_defaults(**config)
     args = parser.parse_args()
     return args

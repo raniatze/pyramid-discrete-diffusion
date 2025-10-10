@@ -10,8 +10,8 @@ infer_data_source: 'generation' # choices: dataset, generation ### TODO: Change 
 # infer_data_source: 'dataset'
 
 # Scene settings
-prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/infinite_generation/s_1/Generated/'  # NOTE: This is for infinite generation
 # prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_1_50K_no_augmentation/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
+prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/infinite_generation/s_1/Generated/'  # NOTE: This is for infinite generation
 scene_fusion_method: 'discard'  # choices: discard, force, vote
 mask_ratio: 0.0625
 infinite_ratio: 0.1875
@@ -67,3 +67,4 @@ vqvae_path: ''
 # Logging and paths
 log_home: null
 exp_name: 'default'
+log_path: '/scratch_local/christina/pyramid-discrete-diffusion/infinite_generation/s_2'  # NOTE: Only specify in the infinite scene generation case.

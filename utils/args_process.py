@@ -51,8 +51,9 @@ def process_args_conflict(args):
     if args.prev_stage == 'none' and args.next_stage == 's_1':
         args.quantized_infer_data_path = args.infer_data_path
         args.quantized_train_data_path = args.train_data_path
-    
-    args.log_path = set_log_path(args.mode, args.exp_name)
+
+    if getattr(args, 'log_path', None) is None:
+        args.log_path = set_log_path(args.mode, args.exp_name)
     
     if args.mode == 'inference':
         args.batch_size = 1
