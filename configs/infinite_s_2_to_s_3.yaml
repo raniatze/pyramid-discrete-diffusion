@@ -1,26 +1,26 @@
 # Experiment settings
 prev_stage: 's_2'  # choices: none, s_1, s_2
 next_stage: 's_3'  # choices: s_1, s_2, s_3
-resume: false
-resume_path: '' ### TODO: Remember to set your pre-trained model path.
-generation_num: 10 #TODO: You can change this number to generate more or less.
+resume: true
+resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_3_no_augmentation/models/epoch240.tar' ### TODO: Remember to set your pre-trained model path.
+generation_num: 50  # NOTE: This is for infinite generation. Set equal to generation_num * infinity_size[0] * infinity_size[1], where generation_num is from infinite_s_1.yaml
 mode: 'infinity_gen' # choices: train, inference, infinity_gen
 infer_data_source: 'generation' # choices: dataset, generation ### TODO: Only 'generation' is supported for infinite generation.
 
 # Scene settings
-prev_scene_path: '/root/autodl-tmp/temp_PDD/pyramid_discrete_diffusion/infinite_generation/de03/Generated' ### TODO: Set the path to the generated scene file from s_2.
+prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/infinite_generation/s_2/Generated/' ### TODO: Set the path to the generated scene file from s_2.
 scene_fusion_method: 'discard'  # choices: discard, force, vote
 mask_ratio: 0.0625
 infinite_ratio: 0.1875
 mask_prob: [0.25, 0.25, 0.25, 0.25]  # [0] for up, [1] for left, [2] for up and left, [3] for none
-infinity_size: [3, 2] ### TODO: Keep the same as the size of the generated scene from infinite_s_1.yaml.
+infinity_size: [5, 1] ### TODO: Keep the same as the size of the generated scene from infinite_s_1.yaml.
 
 # Data settings
-dataset: 'carla'  # choices: carla, kitti
+dataset: 'pritti'  # choices: carla, kitti
 train_data_path: ''
 quantized_train_data_path: ''
-infer_data_path: './data/CarlaSC_quantized_256_256_16/Cartesian/Train'
-quantized_infer_data_path: './data/CarlaSC_quantized_64_64_8/Cartesian/Train'
+infer_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_256'
+quantized_infer_data_path: '/scratch_local/christina/pyramid-discrete-diffusion/data/voxel_cache_64'
 data_argumentation: false
 
 # Hardware and distribution settings

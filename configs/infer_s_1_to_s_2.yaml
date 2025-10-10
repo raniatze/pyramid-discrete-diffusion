@@ -3,19 +3,20 @@ prev_stage: 's_1'  # choices: none, s_1, s_2
 next_stage: 's_2'  # choices: s_1, s_2, s_3
 resume: true
 resume_path: '/scratch_local/christina/pyramid-discrete-diffusion/checkpoints/s_2_no_augmentation/models/epoch999.tar'
-generation_num: 50000
+# generation_num: 50000
+generation_num: 50  # NOTE: This is for infinite generation. Set equal to generation_num * infinity_size[0] * infinity_size[1], where generation_num is from infinite_s_1.yaml
 mode: 'inference' # choices: train, inference, infinity_gen
 infer_data_source: 'generation' # choices: dataset, generation ### TODO: Change to 'generation' if you want to use the generated data from s_1
 # infer_data_source: 'dataset'
 
 # Scene settings
-prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_1_50K_no_augmentation/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
-# prev_scene_path: ''
+prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/infinite_generation/s_1/Generated/'  # NOTE: This is for infinite generation
+# prev_scene_path: '/scratch_local/christina/pyramid-discrete-diffusion/generated/s_1_50K_no_augmentation/Generated/' ### TODO: If you set 'infer_data_source' as 'generation', set the path to the generated scene file from s_1.
 scene_fusion_method: 'discard'  # choices: discard, force, vote
 mask_ratio: 0.0625
 infinite_ratio: 0.1875
 mask_prob: [0.25, 0.25, 0.25, 0.25]  # [0] for up, [1] for left, [2] for up and left, [3] for none
-infinity_size: [3, 2]
+infinity_size: [5, 1]
 
 # Data settings
 dataset: 'pritti'  # choices: carla, pritti, kitti

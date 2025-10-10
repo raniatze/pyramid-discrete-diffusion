@@ -188,7 +188,61 @@ def compute_offsets_sub_scene(next_data_size, prev_data_size, mask_ratio, next_s
 
 # --------------------------------------------------------------------------------
 
-def infinity_fusion(next_data_size, mask_ratio, log_path, infinity_size, fusion_method='discard', high_res=False, folder_name=None):
+def infinity_fusion(next_data_size, mask_ratio, log_path, infinity_size, fusion_method='discard', high_res=False, folder_name=None, scene_id=0):
+    folder_path = os.path.join(log_path, 'Generated')
+    output_folder = os.path.join(log_path, 'InfiniteScene')
+    os.makedirs(output_folder, exist_ok=True)
+
+    # tile geometry
+    INIT_SIZE = (256, 256, 16) if high_res else next_data_size
+    MASK_WIDTH  = int(INIT_SIZE[0] * (1 - mask_ratio))
+    MASK_HEIGHT = int(INIT_SIZE[1] * (1 - mask_ratio))
+
+    tiles_per_scene = infinity_size[0] * infinity_size[1]
+    start_idx = scene_id * tiles_per_scene
+
+    # build inputs for THIS scene only
+    if not high_res:
+        files = [
+            os.path.join(folder_path, f"result_{start_idx + i * infinity_size[0] + j}.txt")
+            for i in range(infinity_size[1]) for j in range(infinity_size[0])
+        ]
+    else:
+        # keep your existing high_res branch (folder_name -> merged_k.txt)
+        # but also write a unique fused filename
+        if folder_name is None:
+            raise ValueError("folder_name must be provided when high_res=True")
+        file_path = os.path.join(log_path, folder_name)
+        files = [
+            os.path.join(file_path, f"merged_{start_idx + i * infinity_size[0] + j}.txt")
+            for i in range(infinity_size[1]) for j in range(infinity_size[0])
+        ]
+        parent_folder = os.path.dirname(file_path)
+        output_folder = os.path.join(parent_folder, 'InfiniteScene')
+        os.makedirs(output_folder, exist_ok=True)
+
+    # offsets for stitching
+    offsets = [
+        (j * MASK_WIDTH, i * MASK_HEIGHT)
+        for i in range(infinity_size[1]) for j in range(infinity_size[0])
+    ]
+
+    merged_voxels = merge_voxel_files(files, offsets, fusion_method)
+
+    # unique output per scene
+    if not high_res:
+        out = os.path.join(output_folder, f'infinity_scene_{scene_id:05d}.txt')
+    else:
+        out = os.path.join(output_folder, f'high_res_infinity_scene_{scene_id:05d}.txt')
+
+    with open(out, 'w') as f:
+        for voxel in merged_voxels:
+            f.write(f"{voxel[0]:.18e} {voxel[1]:.18e} {voxel[2]:.18e} {voxel[3]:.18e}\n")
+
+    return out
+
+'''
+def infinity_fusion(next_data_size, mask_ratio, log_path, infinity_size, fusion_method='discard', high_res=False, folder_name=None, scene_id=0):
     folder_path = os.path.join(log_path, 'Generated')
     output_folder = os.path.join(log_path, 'InfiniteScene')
     
@@ -215,9 +269,10 @@ def infinity_fusion(next_data_size, mask_ratio, log_path, infinity_size, fusion_
     merged_voxels = merge_voxel_files(files, offsets, fusion_method)
     
     if high_res == False:
-        output_file_path = os.path.join(output_folder, f'infinity_scene_0.txt')
+        output_file_path = os.path.join(output_folder, f'infinity_scene_{scene_id}.txt')
     else:
-        output_file_path = os.path.join(output_folder, f'high_res_infinity_scene_0.txt')
+        output_file_path = os.path.join(output_folder, f'high_res_infinity_scene_{scene_id}.txt')
     with open(output_file_path, 'w') as f:
         for voxel in merged_voxels:
             f.write(f"{voxel[0]:.18e} {voxel[1]:.18e} {voxel[2]:.18e} {voxel[3]:.18e}\n")
+'''

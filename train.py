@@ -321,22 +321,28 @@ class Experiment(object):
                             generated = self.model.sample(next_data_voxels) 
                         else :
                             if self.args.mode=='infinity_gen':
-                                for i in range(self.args.infinity_size[0]*self.args.infinity_size[1]):
-                                    print(f"Working on INFINITE SCENE generation process: {i + 1} / {self.args.infinity_size[0]*self.args.infinity_size[1]}")
+                                total_tiles = self.args.infinity_size[0]*self.args.infinity_size[1]
+                                # this scene's slot in the global ordering of finished+new scenes
+                                scene_slot = already_done + new_done
+                                for i in range(total_tiles):
+                                    print(f"Working on INFINITE SCENE generation process: {i + 1} / {total_tiles}")
                                     context = infinity_mask(self.args, self.args.infinity_size, i)
                                     context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(1)
                                     generated = self.model.sample(context)
+
+                                    tile_global_idx = scene_slot * total_tiles + i
+
                                     visualization(args=self.args, 
                                                   generated=generated, 
                                                   prev_data_voxels=prev_data_voxels, 
                                                   next_data_voxels=next_data_voxels, 
-                                                  iteration = i)
+                                                  iteration = tile_global_idx)
                                 print("Working on infinite scene fusion...")
                                 infinity_fusion(next_data_size=self.args.next_data_size,
                                                 mask_ratio=self.args.infinite_ratio,
                                                 log_path=self.args.log_path,
-                                                infinity_size=self.args.infinity_size)
-                                return 0
+                                                infinity_size=self.args.infinity_size,
+                                                scene_id=scene_slot)
                             elif self.args.model_type=='con':
                                 context = np.zeros(self.args.next_data_size, dtype=int)
                                 context = torch.from_numpy(np.asarray(context)).long().cuda().unsqueeze(0).unsqueeze(1)  # (1, 1, 32, 32, 4)
@@ -358,14 +364,17 @@ class Experiment(object):
                         # return 0
                     new_done += 1
                 
-            if self.args.mode == 'infinity_gen' and self.args.next_stage in ['s_2', 's_3'] and self.args.prev_stage != "none":
+            if self.args.mode == 'infinity_gen' and self.args.next_stage=='s_3':
                 print("Working on infinite scene fusion...")
-                infinity_fusion(next_data_size=self.args.next_data_size,
-                                mask_ratio=self.args.infinite_ratio,
-                                log_path=self.args.log_path,
-                                infinity_size=self.args.infinity_size,
-                                high_res=True,
-                                folder_name='GeneratedFusion')
+                total_infinite_scenes = target_total / (self.args.infinity_size[0]*self.args.infinity_size[1])
+                for idx in range(total_infinite_scenes):
+                    infinity_fusion(next_data_size=self.args.next_data_size,
+                                    mask_ratio=self.args.infinite_ratio,
+                                    log_path=self.args.log_path,
+                                    infinity_size=self.args.infinity_size,
+                                    high_res=True,
+                                    scene_id=idx,
+                                    folder_name='GeneratedFusion')
 
             # === compute means ===
             mean_block_time = (total_model_time / model_calls) if model_calls > 0 else float('nan')
