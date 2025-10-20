@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import open3d as o3d
 import numpy as np
 import os
+import re
 import argparse
 
 from typing import Optional
@@ -31,15 +32,15 @@ def infer_voxel_params(folder: str):
     return voxel_size, voxel_dims, origin, stage
 
 
-version = "v3"
-stage = "s_1"
-sub_folder = "Generated"  # NOTE: Use GeneratedFusion for s_3
+# version = "v3"
+stage = "s_3"
+sub_folder = "GeneratedFusion"  # NOTE: Use GeneratedFusion for s_3 & InfiniteScene for infinite scene generation
 
 parser = argparse.ArgumentParser()
-# parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/{sub_folder}')
-# parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{version}/{stage}_20/Visualizations')
-parser.add_argument('--folder', default=f'/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/{sub_folder}')
-parser.add_argument('--save_path', default=f'/media/raniatze/Elements/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/Visualizations')
+parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/{sub_folder}')
+parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/generated/{stage}_50K_no_augmentation/Visualizations')
+# parser.add_argument('--folder', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/infinite_generation/{stage}/{sub_folder}')
+# parser.add_argument('--save_path', default=f'/home/raniatze/Documents/PhD/Research/pyramid-discrete-diffusion/infinite_generation/{stage}/Visualizations')
 parser.add_argument('--voxel_grid', action='store_false')
 
 opt = parser.parse_args()
@@ -214,7 +215,16 @@ def save_screenshot(primitive_meshes, lookat_custom, eye_custom, save_file, rend
 
 
 # === MAIN LOOP ===
-file_list = sorted(os.listdir(opt.folder))
+def extract_scene_index(filename):
+    """Extract numeric index from filenames like 'infinity_scene_001.txt' or 'high_res_infinity_scene_12.txt'"""
+    match = re.search(r'(\d+)', filename)
+    return int(match.group(1)) if match else -1
+
+
+file_list = sorted(
+    [f for f in os.listdir(opt.folder) if f.endswith(".txt")],
+    key=extract_scene_index
+)
 
 renderer = o3d.visualization.rendering.OffscreenRenderer(256, 256)
 renderer.scene.set_background([1.0, 1.0, 1.0, 1.0])

@@ -366,7 +366,7 @@ class Experiment(object):
                 
             if self.args.mode == 'infinity_gen' and self.args.next_stage=='s_3':
                 print("Working on infinite scene fusion...")
-                total_infinite_scenes = target_total / (self.args.infinity_size[0]*self.args.infinity_size[1])
+                total_infinite_scenes = int(target_total / (self.args.infinity_size[0]*self.args.infinity_size[1]))
                 for idx in range(total_infinite_scenes):
                     infinity_fusion(next_data_size=self.args.next_data_size,
                                     mask_ratio=self.args.infinite_ratio,
